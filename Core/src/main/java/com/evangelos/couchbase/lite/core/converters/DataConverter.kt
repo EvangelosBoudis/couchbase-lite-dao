@@ -2,7 +2,7 @@ package com.evangelos.couchbase.lite.core.converters
 
 import com.couchbase.lite.MutableDocument
 
-interface DataConverter: ResultSetConverter {
+interface DataConverter {
 
     fun <T> dataToMutableDocument(data: T, documentType: String, clazz: Class<T>): MutableDocument?
 

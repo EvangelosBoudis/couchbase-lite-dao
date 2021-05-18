@@ -1,7 +1,9 @@
 package com.evangelos.couchbase.lite.core
 
 import com.couchbase.lite.*
-import com.evangelos.couchbase.lite.core.converters.DataConverterImpl
+import com.evangelos.couchbase.lite.core.converters.DocumentManager
+import com.evangelos.couchbase.lite.core.converters.DocumentManagerGson
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -9,10 +11,17 @@ import kotlinx.coroutines.withContext
 
 open class CouchbaseDaoImpl<T>(
     private val database: Database,
+    private val docManager: DocumentManager,
     private val clazz: Class<T>
 ): CouchbaseDao<T> {
 
-    private val converter = DataConverterImpl()
+    constructor(
+        database: Database,
+        gson: Gson,
+        clazz: Class<T>
+    ) : this(database, DocumentManagerGson(gson), clazz)
+
+    // TODO: Second Constructor with kotlinx.serialization bean
 
     private val documentType: String by lazy {
         var type = clazz.simpleName
@@ -33,7 +42,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        return query.observeData(converter = converter, clazz = clazz)
+        return query.observeData(converter = docManager, clazz = clazz)
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -149,30 +158,30 @@ open class CouchbaseDaoImpl<T>(
     }
 
     override suspend fun save(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        val mutableDocuments: MutableList<MutableDocument> = ArrayList()
+        val mutableDocs: MutableList<MutableDocument> = ArrayList()
         for (entry in data) {
-            val mutableDocument = converter.dataToMutableDocument(entry, documentType, clazz) ?: continue
-            mutableDocuments.add(mutableDocument)
+            val mutableDoc = docManager.dataToMutableDocument(entry, documentType, clazz) ?: continue
+            mutableDocs.add(mutableDoc)
         }
         var success = false
         if (bulk) {
             try {
                 database.inBatch {
-                    success = saveMutableDocs(mutableDocuments)
+                    success = saveMutableDocs(mutableDocs)
                 }
             } catch (e: CouchbaseLiteException) {
                 e.printStackTrace()
             }
         } else {
-            success = saveMutableDocs(mutableDocuments)
+            success = saveMutableDocs(mutableDocs)
         }
         return@withContext success
     }
 
-    private fun saveMutableDocs(mutableDocuments: List<MutableDocument>): Boolean {
-        for (mutableDocument in mutableDocuments) {
+    private fun saveMutableDocs(mutableDocs: List<MutableDocument>): Boolean {
+        for (mutableDoc in mutableDocs) {
             try {
-                database.save(mutableDocument)
+                database.save(mutableDoc)
             } catch (e: CouchbaseLiteException) {
                 e.printStackTrace()
                 return false
@@ -211,7 +220,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     override suspend fun delete(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        return@withContext deleteByIds(converter.findIds(data, clazz), bulk)
+        return@withContext deleteByIds(docManager.findIds(data, clazz), bulk)
     }
 
     override suspend fun deleteAll(bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
@@ -240,24 +249,24 @@ open class CouchbaseDaoImpl<T>(
 
     override suspend fun update(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
         var success = false
-        val ids = converter.findIds(data, clazz)
+        val ids = docManager.findIds(data, clazz)
         val documents = findDocumentsByIds(ids)
-        val mutableDocuments: MutableList<MutableDocument> = ArrayList()
+        val mutableDocs: MutableList<MutableDocument> = ArrayList()
         if (data.size == documents.size) {
             for (i in documents.indices) {
-                val map = converter.dataToMap(data[i], documentType) ?: continue
-                mutableDocuments.add(documents[i].toMutable().setData(map))
+                val map = docManager.dataToMap(data[i], documentType) ?: continue
+                mutableDocs.add(documents[i].toMutable().setData(map))
             }
             if (bulk) {
                 try {
                     database.inBatch {
-                        success = saveMutableDocs(mutableDocuments)
+                        success = saveMutableDocs(mutableDocs)
                     }
                 } catch (e: CouchbaseLiteException) {
                     e.printStackTrace()
                 }
             } else {
-                success = saveMutableDocs(mutableDocuments)
+                success = saveMutableDocs(mutableDocs)
             }
         }
         return@withContext success
@@ -273,22 +282,22 @@ open class CouchbaseDaoImpl<T>(
 
     override suspend fun replace(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
         val documents = findAllDocuments()
-        val mutableDocuments: MutableList<MutableDocument> = ArrayList()
+        val mutableDocs: MutableList<MutableDocument> = ArrayList()
         for (entry in data) {
-            val mutableDocument = converter.dataToMutableDocument(entry, documentType, clazz) ?: continue
-            mutableDocuments.add(mutableDocument)
+            val mutableDoc = docManager.dataToMutableDocument(entry, documentType, clazz) ?: continue
+            mutableDocs.add(mutableDoc)
         }
         var success = false
         if (bulk) {
             try {
                 database.inBatch {
-                    success = deleteDocuments(documents) && saveMutableDocs(mutableDocuments)
+                    success = deleteDocuments(documents) && saveMutableDocs(mutableDocs)
                 }
             } catch (e: CouchbaseLiteException) {
                 e.printStackTrace()
             }
         } else {
-            success = deleteDocuments(documents) && saveMutableDocs(mutableDocuments)
+            success = deleteDocuments(documents) && saveMutableDocs(mutableDocs)
         }
         return@withContext success
     }
@@ -300,7 +309,7 @@ open class CouchbaseDaoImpl<T>(
     private suspend fun executeAndConvert(query: Query): List<T> = withContext(Dispatchers.IO) {
         val couchbaseDocs: MutableList<T> = ArrayList()
         try {
-            couchbaseDocs.addAll(query.toData(converter, clazz))
+            couchbaseDocs.addAll(query.toData(docManager, clazz))
         } catch (e: CouchbaseLiteException) {
             e.printStackTrace()
         }

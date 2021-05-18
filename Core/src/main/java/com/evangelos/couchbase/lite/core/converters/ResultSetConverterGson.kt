@@ -4,13 +4,11 @@ import com.couchbase.lite.ResultSet
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 
-open class ResultSetConverterImpl: ResultSetConverter {
-
-    protected val converer = Gson()
+open class ResultSetConverterGson(private val gson: Gson): ResultSetConverter {
 
     override fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T? {
         return try {
-            converer.fromJson(converer.toJson(map), clazz)
+            gson.fromJson(gson.toJson(map), clazz)
         } catch (e: JsonSyntaxException) {
             e.printStackTrace()
             null

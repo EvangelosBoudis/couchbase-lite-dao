@@ -1,7 +1,7 @@
 package com.evangelos.couchbase.lite.core.converters
 
 import com.couchbase.lite.MutableDocument
-import com.evangelos.couchbase.lite.core.CouchbaseId
+import com.evangelos.couchbase.lite.core.Id
 import com.evangelos.couchbase.lite.core.TYPE
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -35,7 +35,7 @@ class DocumentManagerGson(private val gson: Gson): ResultSetConverterGson(gson),
         try {
             for (field in clazz.declaredFields) {
                 field.isAccessible = true
-                if (!field.isAnnotationPresent(CouchbaseId::class.java)) continue
+                if (!field.isAnnotationPresent(Id::class.java)) continue
                 return field[data] as String
             }
         } catch (e: Exception) {

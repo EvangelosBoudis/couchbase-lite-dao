@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">CouchbaseLite Dao</string>
+    <string name="name">Name</string>
+    <string name="email">E-mail</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="delete">Delete</string>
+    <string name="delete_all">Delete all</string>
+    <string name="restore">Restore</string>
 </resources>

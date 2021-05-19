@@ -1,4 +1,4 @@
-package com.evangelos.couchbase.lite.core
+package com.evangelos.couchbase.lite.core.extensions
 
 import android.os.AsyncTask
 import com.couchbase.lite.CouchbaseLiteException
@@ -17,11 +17,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executor
 
-fun <T> ResultSet.toData(
-    converter: ResultSetConverter,
-    clazz: Class<T>
-): List<T> = converter.resultSetToData(this, clazz)
-
 suspend fun <T> Query.toData(
     converter: ResultSetConverter,
     clazz: Class<T>
@@ -33,23 +28,18 @@ suspend fun <T> Query.toData(
     }
 }
 
-// TODO: Result / Error Pair Type
-
 @ExperimentalCoroutinesApi
 fun Query.observeChange(
     executor: Executor
 ): Flow<QueryChange> = callbackFlow {
-    val token = addChangeListener(executor) {
-        try {
-            if (it.error == null) {
-                offer(it)
-            } else {
-                throw it.error
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    val token = addChangeListener(executor) { change ->
+        if (change.error == null) {
+            offer(change)
+        } else {
+            throw change.error
         }
     }
+    execute()
     awaitClose {
         removeChangeListener(token)
     }

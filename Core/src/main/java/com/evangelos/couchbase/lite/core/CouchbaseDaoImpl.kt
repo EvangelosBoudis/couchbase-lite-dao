@@ -3,11 +3,15 @@ package com.evangelos.couchbase.lite.core
 import com.couchbase.lite.*
 import com.evangelos.couchbase.lite.core.converters.DocumentManager
 import com.evangelos.couchbase.lite.core.converters.DocumentManagerGson
+import com.evangelos.couchbase.lite.core.extensions.observeData
+import com.evangelos.couchbase.lite.core.extensions.toData
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+
+// TODO: License + Documentation (like MOLO) + ExceptionHandle + remove Boolean as respose + Documentation like SPring with @Id (email etc.) + Mockito Testing + Icon of test pass + Good documentation inside README + Check DAo Errors DoesNotExists Exception etc.
 
 open class CouchbaseDaoImpl<T>(
     private val database: Database,
@@ -49,6 +53,16 @@ open class CouchbaseDaoImpl<T>(
     /// Read
     //////////////////////////////////////////////////////////////////////////////////////////
 
+    override suspend fun count(): Int = withContext(Dispatchers.IO) {
+
+        val query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(database))
+            .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
+
+        return@withContext query.execute().allResults().size
+    }
+
     override suspend fun findOne(): T? = withContext(Dispatchers.IO) {
 
         val query = QueryBuilder
@@ -70,21 +84,16 @@ open class CouchbaseDaoImpl<T>(
         return@withContext executeAndConvert(query)
     }
 
-    // TODO: Replace with Order like Spring
     override suspend fun findAll(
         limit: Int,
         skip: Int,
-        asc: Boolean,
-        vararg orderBy: String
+        orderBy: List<Pair<String, Boolean>>
     ): List<T> = withContext(Dispatchers.IO) {
 
-        val ordering = orderBy.map {
-            val expression = Ordering.expression(Expression.property(it))
-            if (asc) {
-                expression.ascending()
-            } else {
-                expression.descending()
-            }
+        val ordering = orderBy.map { pair ->
+            val expression = Ordering.expression(Expression.property(pair.first))
+            if (pair.second) expression.ascending()
+            else expression.descending()
         }.toTypedArray()
 
         val query = QueryBuilder

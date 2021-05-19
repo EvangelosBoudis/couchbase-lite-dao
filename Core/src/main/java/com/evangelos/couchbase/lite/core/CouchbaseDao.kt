@@ -6,11 +6,13 @@ interface CouchbaseDao<T> {
 
     fun observeAll(): Flow<List<T>>
 
+    suspend fun count(): Int
+
     suspend fun findOne(): T?
 
     suspend fun findAll(): List<T>
 
-    suspend fun findAll(limit: Int, skip: Int, asc: Boolean, vararg orderBy: String): List<T>
+    suspend fun findAll(limit: Int, skip: Int, orderBy: List<Pair<String, Boolean>>): List<T>
 
     suspend fun findById(id: String): T?
 

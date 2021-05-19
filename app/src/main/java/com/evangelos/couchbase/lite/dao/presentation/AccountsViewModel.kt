@@ -1,18 +1,40 @@
 package com.evangelos.couchbase.lite.dao.presentation
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.couchbase.lite.*
 import com.evangelos.couchbase.lite.core.CouchbaseDao
+import com.evangelos.couchbase.lite.core.TYPE
+import com.evangelos.couchbase.lite.core.converters.ResultSetConverter
+import com.evangelos.couchbase.lite.core.extensions.observeData
 import com.evangelos.couchbase.lite.dao.data.AccountData
+import com.evangelos.couchbase.lite.dao.data.AccountDto
 import kotlinx.coroutines.launch
 import java.util.*
 
 class AccountsViewModel(
+    private val database: Database,
+    private val resultSetConverter: ResultSetConverter,
     private val accountDao: CouchbaseDao<AccountData>
 ) : ViewModel() {
 
     val accounts = accountDao.observeAll().asLiveData()
+
+    // Projection example
+    val accountDto: LiveData<List<AccountDto>> by lazy {
+        val query = QueryBuilder
+            .select(
+                SelectResult.property("id"),
+                SelectResult.property("name"),
+                SelectResult.property("email")
+            )
+            .from(DataSource.database(database))
+            .where(Expression.property(TYPE).equalTo(Expression.string("AccountDocument")))
+
+        query.observeData(converter = resultSetConverter, clazz = AccountDto::class.java).asLiveData()
+    }
 
     init {
         viewModelScope.launch {

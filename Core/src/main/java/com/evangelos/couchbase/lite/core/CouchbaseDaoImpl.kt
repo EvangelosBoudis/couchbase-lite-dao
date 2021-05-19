@@ -13,6 +13,11 @@ import kotlinx.coroutines.withContext
 
 // TODO: License + Documentation (like MOLO) + ExceptionHandle + remove Boolean as respose + Documentation like SPring with @Id (email etc.) + Mockito Testing + Icon of test pass + Good documentation inside README + Check DAo Errors DoesNotExists Exception etc.
 
+/*
+* TODO:
+*  1. Remove Boolean & Add Exceptions
+* */
+
 open class CouchbaseDaoImpl<T>(
     private val database: Database,
     private val docManager: DocumentManager,

@@ -2,10 +2,10 @@ package com.evangelos.couchbase.lite.dao.ui.accounts
 
 import android.view.View
 import com.evangelos.couchbase.lite.dao.R
-import com.evangelos.couchbase.lite.dao.data.AccountData
+import com.evangelos.couchbase.lite.dao.data.AccountDto
 import com.evangelos.couchbase.lite.dao.util.RecyclerAdapter
 
-class AccountsAdapter : RecyclerAdapter<AccountData, AccountsViewHolder>() {
+class AccountsAdapter : RecyclerAdapter<AccountDto, AccountsViewHolder>() {
 
     override fun getResId(viewType: Int) = R.layout.account_cell
 

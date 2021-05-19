@@ -7,7 +7,7 @@ import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.evangelos.couchbase.lite.dao.R
-import com.evangelos.couchbase.lite.dao.data.AccountData
+import com.evangelos.couchbase.lite.dao.data.AccountDto
 import com.evangelos.couchbase.lite.dao.databinding.FragmentAccountsBinding
 import com.evangelos.couchbase.lite.dao.presentation.AccountsViewModel
 import com.evangelos.couchbase.lite.dao.presentation.ViewModelFactory
@@ -16,7 +16,7 @@ import com.evangelos.couchbase.lite.dao.util.viewModels
 
 class AccountsFragment : Fragment(
     R.layout.fragment_accounts
-), AdapterClickListener<AccountData>, View.OnClickListener {
+), AdapterClickListener<AccountDto>, View.OnClickListener {
 
     private val viewModel: AccountsViewModel by viewModels(::ViewModelFactory)
 
@@ -35,12 +35,12 @@ class AccountsFragment : Fragment(
             restoreBtn.setOnClickListener(this@AccountsFragment)
         }
         adapter.adapterClickListener = this
-        viewModel.accounts.observe(viewLifecycleOwner) { accounts ->
+        viewModel.accountDto.observe(viewLifecycleOwner) { accounts ->
             adapter.dataSet = accounts
         }
     }
 
-    override fun onClick(view: View, model: AccountData, position: Int) {
+    override fun onClick(view: View, model: AccountDto, position: Int) {
         if (view.id == R.id.delete_btn) {
             viewModel.deleteAccount(model.id)
         } else {

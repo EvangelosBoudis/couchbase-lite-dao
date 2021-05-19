@@ -11,3 +11,9 @@ data class AccountData(
     val username: String?,
     val password: String?
 )
+
+data class AccountDto(
+    val id: String,
+    val name: String?,
+    val email: String?
+)

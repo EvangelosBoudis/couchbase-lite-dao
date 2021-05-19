@@ -16,7 +16,7 @@ abstract class CommonViewModelFactory : ViewModelProvider.Factory {
 
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         return when (modelClass) {
-            AccountsViewModel::class.java -> AccountsViewModel(AppModule.accountDao)
+            AccountsViewModel::class.java -> AccountsViewModel(AppModule.database, AppModule.resultSetConverter, AppModule.accountDao)
             AccountConstructorViewModel::class.java -> AccountConstructorViewModel(AppModule.accountDao)
             AccountDetailsViewModel::class.java -> AccountDetailsViewModel(AppModule.accountDao)
             else -> error("Unhandled ViewModel of type ${modelClass.simpleName}")

@@ -7,17 +7,18 @@ import com.evangelos.couchbase.lite.core.extensions.observeData
 import com.evangelos.couchbase.lite.core.extensions.toData
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-// TODO: License + Documentation (like MOLO) + ExceptionHandle + remove Boolean as respose + Documentation like SPring with @Id (email etc.) + Mockito Testing + Icon of test pass + Good documentation inside README + Check DAo Errors DoesNotExists Exception etc.
+// https://kotlinlang.org/docs/exceptions.html#checked-exceptions
+// Documentation about Transactional with different DAO types
 
-/*
-* TODO:
-*  1. Remove Boolean & Add Exceptions
-* */
-
+/**
+ * Implementation of [CouchbaseDao].
+ *
+ * @param [T] The type of the domain object for which this instance is to be used.
+ *
+ */
 open class CouchbaseDaoImpl<T>(
     private val database: Database,
     private val docManager: DocumentManager,
@@ -26,24 +27,20 @@ open class CouchbaseDaoImpl<T>(
 
     constructor(
         database: Database,
-        gson: Gson,
+        gson: Gson = Gson(),
         clazz: Class<T>
     ) : this(database, DocumentManagerGson(gson), clazz)
-
-    // TODO: Second Constructor with kotlinx.serialization bean
 
     private val documentType: String by lazy {
         var type = clazz.simpleName
         if (clazz.isAnnotationPresent(CouchbaseDocument::class.java)) {
-            val ann = clazz.getAnnotation(CouchbaseDocument::class.java)
-            ann?.type?.let {
-                if (it.isNotEmpty()) type = it
+            clazz.getAnnotation(CouchbaseDocument::class.java)?.type?.let {
+                if (it.isNotBlank()) type = it
             }
         }
         type
     }
 
-    @ExperimentalCoroutinesApi
     override fun observeAll(): Flow<List<T>> {
 
         val query = QueryBuilder
@@ -58,6 +55,11 @@ open class CouchbaseDaoImpl<T>(
     /// Read
     //////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Returns the number of documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * @return number of documents.
+     * @throws [CouchbaseLiteException].
+     */
     override suspend fun count(): Int = withContext(Dispatchers.IO) {
 
         val query = QueryBuilder
@@ -65,9 +67,14 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        return@withContext query.execute().allResults().size
+        query.execute().allResults().size
     }
 
+    /**
+     * Retrieves a single document where the type it has, coincides with the [CouchbaseDocument.type].
+     * @return document or null if none was found.
+     * @throws [CouchbaseLiteException].
+     */
     override suspend fun findOne(): T? = withContext(Dispatchers.IO) {
 
         val query = QueryBuilder
@@ -76,9 +83,14 @@ open class CouchbaseDaoImpl<T>(
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
             .limit(Expression.intValue(1))
 
-        return@withContext executeAndConvert(query).firstOrNull()
+        query.toData(docManager, clazz).firstOrNull()
     }
 
+    /**
+     * Retrieves all documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * @return all documents.
+     * @throws [CouchbaseLiteException].
+     */
     override suspend fun findAll(): List<T> = withContext(Dispatchers.IO) {
 
         val query = QueryBuilder
@@ -86,7 +98,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        return@withContext executeAndConvert(query)
+        query.toData(docManager, clazz)
     }
 
     override suspend fun findAll(
@@ -108,14 +120,49 @@ open class CouchbaseDaoImpl<T>(
             .orderBy(*ordering)
             .limit(Expression.intValue(limit), Expression.intValue(skip))
 
-        return@withContext executeAndConvert(query)
+        query.toData(docManager, clazz)
     }
 
+    /**
+     * Returns whether a document with the given id exists.
+     * @param id document unique key.
+     * @return true if a document with the given id exists, false otherwise.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun existsById(id: String): Boolean = withContext(Dispatchers.IO) {
+
+        val query: Query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(database))
+            .where(Meta.id.equalTo(Expression.string(id)))
+
+        query.execute().allResults().size > 0
+    }
+
+    /**
+     * Retrieves a document by its id.
+     * @param id document unique key.
+     * @return the document with the given id or null if none found.
+     * @throws [CouchbaseLiteException].
+     */
     override suspend fun findById(id: String): T? = withContext(Dispatchers.IO) {
-        return@withContext findByIds(arrayListOf(id)).firstOrNull()
+
+        val query: Query = QueryBuilder
+            .select(SelectResult.all())
+            .from(DataSource.database(database))
+            .where(Meta.id.equalTo(Expression.string(id)))
+
+        query.toData(docManager, clazz).firstOrNull()
     }
 
-    override suspend fun findByIds(ids: List<String>): List<T> = withContext(Dispatchers.IO) {
+    /**
+     * Retrieves all documents identified by the given ids.
+     * If some or all ids are not found, no documents are returned for these IDs.
+     * @param ids documents unique keys.
+     * @return documents. The size can be equal or less than the number of given ids.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun findAllById(ids: List<String>): List<T> = withContext(Dispatchers.IO) {
 
         val values = ids.map {
             Expression.string(it)
@@ -126,208 +173,223 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Meta.id.`in`(*values))
 
-        return@withContext executeAndConvert(query)
+        query.toData(docManager, clazz)
     }
 
-    override suspend fun findAllIds(): List<String> = withContext(Dispatchers.IO) {
+    /**
+     * Retrieves the ids of all documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * @return documents unique keys.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun findAllId(): List<String> = withContext(Dispatchers.IO) {
 
         val query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        val results: MutableList<Result> = ArrayList()
-        try {
-            results.addAll(query.execute().allResults())
-        } catch (e: CouchbaseLiteException) {
-            e.printStackTrace()
-        }
-        val ids: MutableList<String> = ArrayList()
-        for (result in results) {
-            val id = result.getString(ID) ?: continue
-            ids.add(id)
-        }
-        return@withContext ids
+        query.execute().allResults().mapNotNull { it.getString(ID) }
+    }
+
+    private fun findDocumentById(id: String): Document {
+        return database.getDocument(id) ?: throw CouchbaseLiteException("Document with id: $id does not exists.")
     }
 
     private fun findDocumentsByIds(ids: List<String>): List<Document> {
-        val documents: MutableList<Document> = ArrayList()
-        for (id in ids) {
-            val document = database.getDocument(id) ?: continue
-            documents.add(document)
+        return ids.map {
+            findDocumentById(it)
         }
-        return documents
+        /*return ids.mapNotNull {
+            database.getDocument(it)
+        }*/
     }
 
     private suspend fun findAllDocuments(): List<Document> {
-        return findDocumentsByIds(findAllIds())
+        return findDocumentsByIds(findAllId())
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     /// Create
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    override suspend fun save(data: T): Boolean = withContext(Dispatchers.IO) {
-        return@withContext save(arrayListOf(data), bulk = false)
+    /**
+     * Saves the given document. If the identifier of the document already exists in database then it is replaced with the provided.
+     * @param data document to be saved.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun save(data: T) = withContext(Dispatchers.IO) {
+        saveAll(arrayListOf(data), bulk = false)
     }
 
-    override suspend fun save(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        val mutableDocs: MutableList<MutableDocument> = ArrayList()
-        for (entry in data) {
-            val mutableDoc = docManager.dataToMutableDocument(entry, documentType, clazz) ?: continue
-            mutableDocs.add(mutableDoc)
+    /**
+     * Saves the given documents. If some identifiers already exists in database then the documents replaced with the provided.
+     * @param bulk operation type. If it is true, save is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun saveAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
+        val mutableDocs = data.mapNotNull {
+            docManager.dataToMutableDocument(it, documentType, clazz)
         }
-        var success = false
         if (bulk) {
-            try {
-                database.inBatch {
-                    success = saveMutableDocs(mutableDocs)
-                }
-            } catch (e: CouchbaseLiteException) {
-                e.printStackTrace()
+            database.inBatch {
+                saveMutableDocs(mutableDocs)
             }
         } else {
-            success = saveMutableDocs(mutableDocs)
+            saveMutableDocs(mutableDocs)
         }
-        return@withContext success
     }
 
-    private fun saveMutableDocs(mutableDocs: List<MutableDocument>): Boolean {
-        for (mutableDoc in mutableDocs) {
-            try {
-                database.save(mutableDoc)
-            } catch (e: CouchbaseLiteException) {
-                e.printStackTrace()
-                return false
-            }
+    private fun saveMutableDocs(mutableDocs: List<MutableDocument>) {
+        mutableDocs.forEach { mutableDoc ->
+            database.save(mutableDoc)
         }
-        return true
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     /// Delete
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    override suspend fun deleteById(id: String): Boolean = withContext(Dispatchers.IO) {
-        return@withContext deleteByIds(arrayListOf(id), bulk = false)
+    /**
+     * Deletes the document identified by the given id.
+     * @param id the unique key of the document to be deleted.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun deleteById(id: String) = withContext(Dispatchers.IO) {
+        deleteAllById(arrayListOf(id), bulk = false)
     }
 
-    override suspend fun delete(data: T): Boolean = withContext(Dispatchers.IO) {
-        return@withContext delete(arrayListOf(data), bulk = false)
+    /**
+     * Deletes the given document.
+     * @param data document to be deleted.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun delete(data: T) = withContext(Dispatchers.IO) {
+        deleteAll(arrayListOf(data), bulk = false)
     }
 
-    override suspend fun deleteByIds(ids: List<String>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
+    /**
+     * Deletes the documents identified by the given ids.
+     * @param ids the unique keys of the documents to be deleted.
+     * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun deleteAllById(ids: List<String>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val documents = findDocumentsByIds(ids)
-        var success = false
         if (bulk) {
-            try {
-                database.inBatch {
-                    success = deleteDocuments(documents)
-                }
-            } catch (e: CouchbaseLiteException) {
-                e.printStackTrace()
+            database.inBatch {
+                deleteDocuments(documents)
             }
         } else {
-            success = deleteDocuments(documents)
+            deleteDocuments(documents)
         }
-        return@withContext success
     }
 
-    override suspend fun delete(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        return@withContext deleteByIds(docManager.findIds(data, clazz), bulk)
+    /**
+     * Deletes the given documents.
+     * @param data documents to be deleted.
+     * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun deleteAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
+        deleteAllById(docManager.findIds(data, clazz), bulk)
     }
 
-    override suspend fun deleteAll(bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        return@withContext deleteByIds(findAllIds(), bulk)
+    /**
+     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type]
+     * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun deleteAll(bulk: Boolean) = withContext(Dispatchers.IO) {
+        deleteAllById(findAllId(), bulk)
     }
 
-    private fun deleteDocuments(documents: List<Document>): Boolean {
-        for (document in documents) {
-            try {
-                database.delete(document)
-            } catch (e: CouchbaseLiteException) {
-                e.printStackTrace()
-                return false
-            }
+    private fun deleteDocuments(documents: List<Document>) {
+        documents.forEach { document ->
+            database.delete(document)
         }
-        return true
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     /// Update
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    override suspend fun update(data: T): Boolean = withContext(Dispatchers.IO) {
-        return@withContext update(arrayListOf(data), bulk = false)
+    /**
+     * Updates the given document.
+     * @param data document to be updated.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun update(data: T) = withContext(Dispatchers.IO) {
+        updateAll(arrayListOf(data), bulk = false)
     }
 
-    override suspend fun update(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
-        var success = false
+    /**
+     * Updates the given documents.
+     * @param data documents to be updated.
+     * @param bulk operation type. If it is true the update is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun updateAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val ids = docManager.findIds(data, clazz)
         val documents = findDocumentsByIds(ids)
-        val mutableDocs: MutableList<MutableDocument> = ArrayList()
-        if (data.size == documents.size) {
-            for (i in documents.indices) {
-                val map = docManager.dataToMap(data[i], documentType) ?: continue
-                mutableDocs.add(documents[i].toMutable().setData(map))
-            }
-            if (bulk) {
-                try {
-                    database.inBatch {
-                        success = saveMutableDocs(mutableDocs)
-                    }
-                } catch (e: CouchbaseLiteException) {
-                    e.printStackTrace()
-                }
-            } else {
-                success = saveMutableDocs(mutableDocs)
-            }
+        val mutableDocs = documents.mapIndexedNotNull { index, document ->
+            val map = docManager.dataToMap(data[index], documentType)
+            if (map != null) document.toMutable().setData(map) else null
         }
-        return@withContext success
+        if (bulk) {
+            database.inBatch {
+                saveMutableDocs(mutableDocs)
+            }
+        } else {
+            saveMutableDocs(mutableDocs)
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     /// Replace
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    override suspend fun replace(data: T): Boolean = withContext(Dispatchers.IO) {
-        return@withContext replace(arrayListOf(data), bulk = false)
+    /**
+     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type], and then saves the given document.
+     * @param data document to be saved.
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun replace(data: T) = withContext(Dispatchers.IO) {
+        replaceAll(arrayListOf(data), bulk = false)
     }
 
-    override suspend fun replace(data: List<T>, bulk: Boolean): Boolean = withContext(Dispatchers.IO) {
+    /**
+     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type], and then saves the given documents.
+     * @param data documents to be saved.
+     * @param bulk operation type. If it is true the deletion and save is done by using [com.couchbase.lite.Database.inBatch].
+     * @throws [CouchbaseLiteException].
+     */
+    override suspend fun replaceAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val documents = findAllDocuments()
-        val mutableDocs: MutableList<MutableDocument> = ArrayList()
-        for (entry in data) {
-            val mutableDoc = docManager.dataToMutableDocument(entry, documentType, clazz) ?: continue
-            mutableDocs.add(mutableDoc)
+        val mutableDocs = data.mapNotNull {
+            docManager.dataToMutableDocument(it, documentType, clazz)
         }
-        var success = false
         if (bulk) {
-            try {
-                database.inBatch {
-                    success = deleteDocuments(documents) && saveMutableDocs(mutableDocs)
-                }
-            } catch (e: CouchbaseLiteException) {
-                e.printStackTrace()
+            database.inBatch {
+                deleteDocuments(documents)
+                saveMutableDocs(mutableDocs)
             }
         } else {
-            success = deleteDocuments(documents) && saveMutableDocs(mutableDocs)
+            deleteDocuments(documents)
+            saveMutableDocs(mutableDocs)
         }
-        return@withContext success
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    /// Tools
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    private suspend fun executeAndConvert(query: Query): List<T> = withContext(Dispatchers.IO) {
-        val couchbaseDocs: MutableList<T> = ArrayList()
-        try {
-            couchbaseDocs.addAll(query.toData(docManager, clazz))
-        } catch (e: CouchbaseLiteException) {
-            e.printStackTrace()
-        }
-        return@withContext couchbaseDocs
-    }
+/*    private fun printToConsole(funName: String, msg: String) {
+        Log.i("CouchbaseDaoImpl", "$funName: $msg")
+    }*/
 
 }
+
+/*
+* TODO:
+*  1. License + Documentation inside README (like MOLO)
+*  2. Mockito Testing
+*  3. Test/Mock with directly throws inside withContext() and in batch
+*  4. test update not existing document
+*  5. Icon of test pass
+* */

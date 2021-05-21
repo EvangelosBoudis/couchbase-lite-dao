@@ -16,7 +16,7 @@ class DocumentManagerGson(private val gson: Gson): ResultSetConverterGson(gson),
     ): MutableDocument? {
         val map = dataToMap(data, documentType)
         val id = findId(data, clazz)
-        return if (map != null && id != null) MutableDocument(id, map) else null
+        return if (map != null) MutableDocument(id, map) else null
     }
 
     override fun <T> dataToMap(data: T, documentType: String): Map<String, Any>? {
@@ -31,7 +31,7 @@ class DocumentManagerGson(private val gson: Gson): ResultSetConverterGson(gson),
         }
     }
 
-    override fun <T> findId(data: T, clazz: Class<T>): String? {
+    override fun <T> findId(data: T, clazz: Class<T>): String {
         try {
             for (field in clazz.declaredFields) {
                 field.isAccessible = true
@@ -41,16 +41,13 @@ class DocumentManagerGson(private val gson: Gson): ResultSetConverterGson(gson),
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return null
+        throw IllegalArgumentException("@Id annotation was not found on $clazz")
     }
 
     override fun <T> findIds(data: List<T>, clazz: Class<T>): List<String> {
-        val ids: MutableList<String> = ArrayList()
-        for (entry in data) {
-            val id = findId(entry, clazz) ?: continue
-            ids.add(id)
+        return data.map {
+            findId(it, clazz)
         }
-        return ids
     }
 
 }

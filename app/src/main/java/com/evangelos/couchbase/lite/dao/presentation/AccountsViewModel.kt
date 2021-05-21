@@ -28,7 +28,7 @@ class AccountsViewModel(
         QueryBuilder
             .select(SelectResult.property("id"), SelectResult.property("name"), SelectResult.property("email"))
             .from(DataSource.database(database))
-            .where(Expression.property(TYPE).equalTo(Expression.string("AccountDocument")))
+            .where(Expression.property(TYPE).equalTo(Expression.string("Account")))
             .observeData(clazz = AccountDto::class.java)
             .asLiveData()
     }

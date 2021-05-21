@@ -10,19 +10,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-// https://kotlinlang.org/docs/exceptions.html#checked-exceptions
-// Documentation about Transactional with different DAO types
-
 /**
  * Implementation of [CouchbaseDao].
  *
- * @param [T] The type of the domain object for which this instance is to be used.
+ * @param database The Couchbase Database instance in which the operations will be performed.
+ * @param docManager The manager that will be used for Couchbase Documents manipulation.
+ * @param clazz The type of the domain object for which this instance is to be used.
  *
  */
 open class CouchbaseDaoImpl<T>(
-    private val database: Database,
-    private val docManager: DocumentManager,
-    private val clazz: Class<T>
+    protected val database: Database,
+    protected val docManager: DocumentManager,
+    protected val clazz: Class<T>
 ): CouchbaseDao<T> {
 
     constructor(
@@ -31,16 +30,24 @@ open class CouchbaseDaoImpl<T>(
         clazz: Class<T>
     ) : this(database, DocumentManagerGson(gson), clazz)
 
-    private val documentType: String by lazy {
-        var type = clazz.simpleName
-        if (clazz.isAnnotationPresent(CouchbaseDocument::class.java)) {
-            clazz.getAnnotation(CouchbaseDocument::class.java)?.type?.let {
-                if (it.isNotBlank()) type = it
-            }
-        }
-        type
+   /**
+    * Gets the Document Type by accessing the [CouchbaseDocument] annotation of [T] class.
+    * If not set, defaults to the class name.
+    * */
+    protected val documentType: String by lazy {
+       if (!clazz.isAnnotationPresent(CouchbaseDocument::class.java)) {
+           throw IllegalArgumentException("@CouchbaseDocument annotation was not found on $clazz")
+       }
+       val type = clazz.getAnnotation(CouchbaseDocument::class.java)!!.type
+       if (type.isNotBlank()) type else clazz.simpleName
     }
 
+    /**
+     * Adds a change listener that monitors changes that occur on Documents where the type-property they have,
+     * coincides with the [documentType] and then converts it into [Flow].
+     * @return Flow of documents.
+     * @throws [CouchbaseLiteException].
+     * */
     override fun observeAll(): Flow<List<T>> {
 
         val query = QueryBuilder
@@ -56,7 +63,7 @@ open class CouchbaseDaoImpl<T>(
     //////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Returns the number of documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * Returns the number of documents where the type-property they have, coincides with the [documentType].
      * @return number of documents.
      * @throws [CouchbaseLiteException].
      */
@@ -71,7 +78,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Retrieves a single document where the type it has, coincides with the [CouchbaseDocument.type].
+     * Retrieves a single document where the type-property it has, coincides with the [documentType].
      * @return document or null if none was found.
      * @throws [CouchbaseLiteException].
      */
@@ -87,7 +94,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Retrieves all documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * Retrieves all documents where the type-property they have, coincides with the [documentType].
      * @return all documents.
      * @throws [CouchbaseLiteException].
      */
@@ -101,24 +108,29 @@ open class CouchbaseDaoImpl<T>(
         query.toData(docManager, clazz)
     }
 
+    /**
+     * Retrieves all documents where the type-property they have, coincides with the [documentType], following the paging criteria.
+     * @param pageable object that used for Paging implementation.
+     * @return documents.
+     * @throws [CouchbaseLiteException].
+     *
+     * Example:
+     * val pageable = Pageable(0, 10, mapOf(
+     *     "name" to false, // descending
+     *     "description" to true // ascending
+     * ))
+     * findAll(pageable)
+     * */
     override suspend fun findAll(
-        limit: Int,
-        skip: Int,
-        orderBy: List<Pair<String, Boolean>>
+        pageable: Pageable
     ): List<T> = withContext(Dispatchers.IO) {
-
-        val ordering = orderBy.map { pair ->
-            val expression = Ordering.expression(Expression.property(pair.first))
-            if (pair.second) expression.ascending()
-            else expression.descending()
-        }.toTypedArray()
 
         val query = QueryBuilder
             .select(SelectResult.all())
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
-            .orderBy(*ordering)
-            .limit(Expression.intValue(limit), Expression.intValue(skip))
+            .orderBy(*pageable.ordering)
+            .limit(Expression.intValue(pageable.pageSize), Expression.intValue(pageable.offset))
 
         query.toData(docManager, clazz)
     }
@@ -177,7 +189,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Retrieves the ids of all documents where the type they have, coincides with the [CouchbaseDocument.type].
+     * Retrieves the ids of all documents where the type-property they have, coincides with the [documentType].
      * @return documents unique keys.
      * @throws [CouchbaseLiteException].
      */
@@ -191,21 +203,39 @@ open class CouchbaseDaoImpl<T>(
         query.execute().allResults().mapNotNull { it.getString(ID) }
     }
 
-    private fun findDocumentById(id: String): Document {
+    /**
+     * Retrieves a CouchbaseLite Document by its id. If no document is found, an exception is thrown.
+     * @param id document unique key.
+     * @return CouchbaseLite Document.
+     * @throws [CouchbaseLiteException].
+     */
+    protected fun findDocumentById(id: String): Document {
         return database.getDocument(id) ?: throw CouchbaseLiteException("Document with id: $id does not exists.")
     }
 
-    private fun findDocumentsByIds(ids: List<String>): List<Document> {
+    /**
+     * Retrieves all CouchbaseLite Documents identified by the given ids.
+     * If some id not found, an exception is thrown.
+     * @param ids documents unique keys.
+     * @return CouchbaseLite Documents.
+     * @throws [CouchbaseLiteException].
+     */
+    protected fun findAllDocumentsById(ids: List<String>): List<Document> {
         return ids.map {
             findDocumentById(it)
         }
-        /*return ids.mapNotNull {
-            database.getDocument(it)
-        }*/
+        // return ids.mapNotNull { database.getDocument(it) }
     }
 
-    private suspend fun findAllDocuments(): List<Document> {
-        return findDocumentsByIds(findAllId())
+    /**
+     *
+     * Finds the ids of all documents where the type-property they have, coincides with the [documentType]
+     * and then for each id that was found retrieves CouchbaseLite Documents from Database.
+     * @return all CouchbaseLite Documents.
+     * @throws [CouchbaseLiteException].
+     */
+    protected suspend fun findAllDocuments(): List<Document> {
+        return findAllDocumentsById(findAllId())
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -213,7 +243,7 @@ open class CouchbaseDaoImpl<T>(
     //////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Saves the given document. If the identifier of the document already exists in database then it is replaced with the provided.
+     * Saves the given document. If a document in the database has the same identifier as the one provided, it is updated.
      * @param data document to be saved.
      * @throws [CouchbaseLiteException].
      */
@@ -222,7 +252,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Saves the given documents. If some identifiers already exists in database then the documents replaced with the provided.
+     * Saves the given documents. In case the documents in the database have the same identifier as some of the provided ones, they are updated.
      * @param bulk operation type. If it is true, save is done by using [com.couchbase.lite.Database.inBatch].
      * @throws [CouchbaseLiteException].
      */
@@ -239,7 +269,12 @@ open class CouchbaseDaoImpl<T>(
         }
     }
 
-    private fun saveMutableDocs(mutableDocs: List<MutableDocument>) {
+    /**
+     * Saves the given CouchbaseLite MutableDocuments to [Database].
+     * @param mutableDocs CouchbaseLite MutableDocuments.
+     * @throws [CouchbaseLiteException].
+     */
+    protected fun saveMutableDocs(mutableDocs: List<MutableDocument>) {
         mutableDocs.forEach { mutableDoc ->
             database.save(mutableDoc)
         }
@@ -274,7 +309,7 @@ open class CouchbaseDaoImpl<T>(
      * @throws [CouchbaseLiteException].
      */
     override suspend fun deleteAllById(ids: List<String>, bulk: Boolean) = withContext(Dispatchers.IO) {
-        val documents = findDocumentsByIds(ids)
+        val documents = findAllDocumentsById(ids)
         if (bulk) {
             database.inBatch {
                 deleteDocuments(documents)
@@ -295,7 +330,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type]
+     * Deletes all existing documents where the type-property they have, coincides with the [documentType].
      * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
      * @throws [CouchbaseLiteException].
      */
@@ -303,7 +338,12 @@ open class CouchbaseDaoImpl<T>(
         deleteAllById(findAllId(), bulk)
     }
 
-    private fun deleteDocuments(documents: List<Document>) {
+    /**
+     * Deletes the given CouchbaseLite Documents from [Database].
+     * @param documents CouchbaseLite Documents.
+     * @throws [CouchbaseLiteException].
+     */
+    protected fun deleteDocuments(documents: List<Document>) {
         documents.forEach { document ->
             database.delete(document)
         }
@@ -330,7 +370,7 @@ open class CouchbaseDaoImpl<T>(
      */
     override suspend fun updateAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val ids = docManager.findIds(data, clazz)
-        val documents = findDocumentsByIds(ids)
+        val documents = findAllDocumentsById(ids)
         val mutableDocs = documents.mapIndexedNotNull { index, document ->
             val map = docManager.dataToMap(data[index], documentType)
             if (map != null) document.toMutable().setData(map) else null
@@ -349,7 +389,7 @@ open class CouchbaseDaoImpl<T>(
     //////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type], and then saves the given document.
+     * Deletes all existing documents where the type-property they have, coincides with the [documentType], and then saves the given document.
      * @param data document to be saved.
      * @throws [CouchbaseLiteException].
      */
@@ -358,9 +398,9 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Deletes all existing documents where the type they have, coincides with the [CouchbaseDocument.type], and then saves the given documents.
+     * Deletes all existing documents where the type-property they have, coincides with the [documentType], and then saves the given documents.
      * @param data documents to be saved.
-     * @param bulk operation type. If it is true the deletion and save is done by using [com.couchbase.lite.Database.inBatch].
+     * @param bulk operation type. If it is true the deletion and save is done by using [Database.inBatch].
      * @throws [CouchbaseLiteException].
      */
     override suspend fun replaceAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
@@ -393,3 +433,6 @@ open class CouchbaseDaoImpl<T>(
 *  4. test update not existing document
 *  5. Icon of test pass
 * */
+
+// https://kotlinlang.org/docs/exceptions.html#checked-exceptions
+// Documentation about Transactional with different DAO types

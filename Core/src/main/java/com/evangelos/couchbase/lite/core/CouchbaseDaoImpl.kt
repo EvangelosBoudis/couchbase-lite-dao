@@ -1,10 +1,10 @@
 package com.evangelos.couchbase.lite.core
 
 import com.couchbase.lite.*
-import com.evangelos.couchbase.lite.core.converters.DocumentManager
-import com.evangelos.couchbase.lite.core.converters.DocumentManagerGson
 import com.evangelos.couchbase.lite.core.extensions.observeData
 import com.evangelos.couchbase.lite.core.extensions.toData
+import com.evangelos.couchbase.lite.core.manager.DocumentManager
+import com.evangelos.couchbase.lite.core.manager.DocumentManagerImpl
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
  * Implementation of [CouchbaseDao].
  *
  * @param database The Couchbase Database instance in which the operations will be performed.
- * @param docManager The manager that will be used for Couchbase Documents manipulation.
+ * @param docManager The manager that will be used for Documents manipulation.
  * @param clazz The type of the domain object for which this instance is to be used.
  *
  */
@@ -28,7 +28,7 @@ open class CouchbaseDaoImpl<T>(
         database: Database,
         gson: Gson = Gson(),
         clazz: Class<T>
-    ) : this(database, DocumentManagerGson(gson), clazz)
+    ) : this(database, DocumentManagerImpl.create(gson), clazz)
 
    /**
     * Gets the Document Type by accessing the [CouchbaseDocument] annotation of [T] class.

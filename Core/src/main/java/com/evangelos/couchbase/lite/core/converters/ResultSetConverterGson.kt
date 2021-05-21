@@ -4,7 +4,7 @@ import com.couchbase.lite.ResultSet
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 
-open class ResultSetConverterGson(private val gson: Gson): ResultSetConverter {
+class ResultSetConverterGson(private val gson: Gson): ResultSetConverter {
 
     override fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T? {
         return try {

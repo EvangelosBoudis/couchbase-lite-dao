@@ -1,4 +1,4 @@
-package com.evangelos.couchbase.lite.core.converters
+package com.evangelos.couchbase.lite.core.idFinder
 
 interface IdentifierFinder {
 

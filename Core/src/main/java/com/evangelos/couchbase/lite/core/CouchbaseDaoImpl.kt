@@ -3,8 +3,8 @@ package com.evangelos.couchbase.lite.core
 import com.couchbase.lite.*
 import com.evangelos.couchbase.lite.core.extensions.observeData
 import com.evangelos.couchbase.lite.core.extensions.toData
-import com.evangelos.couchbase.lite.core.manager.DocumentManager
-import com.evangelos.couchbase.lite.core.manager.DocumentManagerImpl
+import com.evangelos.couchbase.lite.core.converters.DocumentConverter
+import com.evangelos.couchbase.lite.core.converters.DocumentConverterGson
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,13 +14,13 @@ import kotlinx.coroutines.withContext
  * Implementation of [CouchbaseDao].
  *
  * @param database The Couchbase Database instance in which the operations will be performed.
- * @param docManager The manager that will be used for Documents manipulation.
+ * @param docConverter The converter that will be used for Documents manipulation.
  * @param clazz The type of the domain object for which this instance is to be used.
  *
  */
 open class CouchbaseDaoImpl<T>(
     protected val database: Database,
-    protected val docManager: DocumentManager,
+    protected val docConverter: DocumentConverter,
     protected val clazz: Class<T>
 ): CouchbaseDao<T> {
 
@@ -28,7 +28,7 @@ open class CouchbaseDaoImpl<T>(
         database: Database,
         gson: Gson = Gson(),
         clazz: Class<T>
-    ) : this(database, DocumentManagerImpl.create(gson), clazz)
+    ) : this(database, DocumentConverterGson(gson), clazz)
 
    /**
     * Gets the Document Type by accessing the [CouchbaseDocument] annotation of [T] class.
@@ -55,7 +55,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        return query.observeData(converter = docManager, clazz = clazz)
+        return query.observeData(converter = docConverter, clazz = clazz)
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ open class CouchbaseDaoImpl<T>(
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
             .limit(Expression.intValue(1))
 
-        query.toData(docManager, clazz).firstOrNull()
+        query.toData(docConverter, clazz).firstOrNull()
     }
 
     /**
@@ -105,7 +105,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Expression.property(TYPE).equalTo(Expression.string(documentType)))
 
-        query.toData(docManager, clazz)
+        query.toData(docConverter, clazz)
     }
 
     /**
@@ -132,7 +132,7 @@ open class CouchbaseDaoImpl<T>(
             .orderBy(*pageable.ordering)
             .limit(Expression.intValue(pageable.pageSize), Expression.intValue(pageable.offset))
 
-        query.toData(docManager, clazz)
+        query.toData(docConverter, clazz)
     }
 
     /**
@@ -164,7 +164,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Meta.id.equalTo(Expression.string(id)))
 
-        query.toData(docManager, clazz).firstOrNull()
+        query.toData(docConverter, clazz).firstOrNull()
     }
 
     /**
@@ -185,7 +185,7 @@ open class CouchbaseDaoImpl<T>(
             .from(DataSource.database(database))
             .where(Meta.id.`in`(*values))
 
-        query.toData(docManager, clazz)
+        query.toData(docConverter, clazz)
     }
 
     /**
@@ -258,7 +258,7 @@ open class CouchbaseDaoImpl<T>(
      */
     override suspend fun saveAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val mutableDocs = data.mapNotNull {
-            docManager.dataToMutableDocument(it, documentType, clazz)
+            docConverter.dataToMutableDocument(it, documentType, clazz)
         }
         if (bulk) {
             database.inBatch {
@@ -326,7 +326,7 @@ open class CouchbaseDaoImpl<T>(
      * @throws [CouchbaseLiteException].
      */
     override suspend fun deleteAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
-        deleteAllById(docManager.findIds(data, clazz), bulk)
+        deleteAllById(docConverter.findIds(data, clazz), bulk)
     }
 
     /**
@@ -369,10 +369,10 @@ open class CouchbaseDaoImpl<T>(
      * @throws [CouchbaseLiteException].
      */
     override suspend fun updateAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
-        val ids = docManager.findIds(data, clazz)
+        val ids = docConverter.findIds(data, clazz)
         val documents = findAllDocumentsById(ids)
         val mutableDocs = documents.mapIndexedNotNull { index, document ->
-            val map = docManager.dataToMap(data[index], documentType)
+            val map = docConverter.dataToMap(data[index], documentType)
             if (map != null) document.toMutable().setData(map) else null
         }
         if (bulk) {
@@ -406,7 +406,7 @@ open class CouchbaseDaoImpl<T>(
     override suspend fun replaceAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val documents = findAllDocuments()
         val mutableDocs = data.mapNotNull {
-            docManager.dataToMutableDocument(it, documentType, clazz)
+            docConverter.dataToMutableDocument(it, documentType, clazz)
         }
         if (bulk) {
             database.inBatch {

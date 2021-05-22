@@ -3,14 +3,19 @@ package com.evangelos.couchbase.lite.core.converters
 import com.couchbase.lite.MutableDocument
 import com.evangelos.couchbase.lite.core.TYPE
 import com.evangelos.couchbase.lite.core.idFinder.IdentifierFinder
+import com.evangelos.couchbase.lite.core.idFinder.IdentifierFinderImpl
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 
-class DataConverterGson(
+class DocumentConverterGson(
     private val gson: Gson,
-    private val identifierFinder: IdentifierFinder
-): DataConverter {
+    private val identifierFinder: IdentifierFinder = IdentifierFinderImpl()
+): ResultSetConverterGson(gson), DocumentConverter {
+
+    override fun <T> findId(data: T, clazz: Class<T>) = identifierFinder.findId(data, clazz)
+
+    override fun <T> findIds(data: List<T>, clazz: Class<T>) = identifierFinder.findIds(data, clazz)
 
     override fun <T> dataToMap(data: T, documentType: String): Map<String, Any>? {
         return try {
@@ -19,7 +24,6 @@ class DataConverterGson(
             map[TYPE] = documentType
             map
         } catch (e: JsonSyntaxException) {
-            e.printStackTrace()
             null
         }
     }
@@ -29,9 +33,10 @@ class DataConverterGson(
         documentType: String,
         clazz: Class<T>
     ): MutableDocument? {
-        val map = dataToMap(data, documentType)
         val id = identifierFinder.findId(data, clazz)
-        return if (map != null) MutableDocument(id, map) else null
+        return dataToMap(data, documentType)?.let { map ->
+            MutableDocument(id, map)
+        }
     }
 
 }

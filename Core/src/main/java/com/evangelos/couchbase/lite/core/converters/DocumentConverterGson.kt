@@ -33,8 +33,8 @@ class DocumentConverterGson(
         documentType: String,
         clazz: Class<T>
     ): MutableDocument? {
-        val id = identifierFinder.findId(data, clazz)
         return dataToMap(data, documentType)?.let { map ->
+            val id = identifierFinder.findId(data, clazz)
             MutableDocument(id, map)
         }
     }

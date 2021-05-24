@@ -61,7 +61,6 @@ interface CouchbaseDao<T> {
     suspend fun findById(id: String): T?
 
     /**
-     *
      * Returns all instances of the type [T] with the given IDs.
      * If some or all ids are not found, no documents are returned for these IDs.
      * @param ids unique keys.

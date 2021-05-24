@@ -326,7 +326,7 @@ open class CouchbaseDaoImpl<T>(
      * @throws [CouchbaseLiteException].
      */
     override suspend fun deleteAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
-        deleteAllById(docConverter.findIds(data, clazz), bulk)
+        deleteAllById(docConverter.findAllId(data, clazz), bulk)
     }
 
     /**
@@ -369,7 +369,7 @@ open class CouchbaseDaoImpl<T>(
      * @throws [CouchbaseLiteException].
      */
     override suspend fun updateAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
-        val ids = docConverter.findIds(data, clazz)
+        val ids = docConverter.findAllId(data, clazz)
         val documents = findAllDocumentsById(ids)
         val mutableDocs = documents.mapIndexedNotNull { index, document ->
             val map = docConverter.dataToMap(data[index], documentType)
@@ -429,9 +429,7 @@ open class CouchbaseDaoImpl<T>(
 * TODO:
 *  1. License + Documentation inside README (like MOLO)
 *  2. Mockito Testing
-*  3. Test/Mock with directly throws inside withContext() and in batch
-*  4. test update not existing document
-*  5. Icon of test pass
+*  3. Icon of test pass
 * */
 
 // https://kotlinlang.org/docs/exceptions.html#checked-exceptions

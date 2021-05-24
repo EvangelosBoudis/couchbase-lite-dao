@@ -19,7 +19,7 @@ class DocumentConverterGson(
      * @param documentType Couchbase document type.
      * @return map or null if [JsonSyntaxException] occurred.
      */
-    override fun <T> dataToMap(data: T, documentType: String): Map<String, Any>? {
+    override suspend fun <T> dataToMap(data: T, documentType: String): Map<String, Any>? {
         return try {
             val json = gson.toJson(data)
             val map = gson.fromJson<MutableMap<String, Any>>(json, object : TypeToken<HashMap<String, Any>>() {}.type)

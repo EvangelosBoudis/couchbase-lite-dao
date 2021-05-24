@@ -14,7 +14,7 @@ open class ResultSetConverterGson(private val gson: Gson): ResultSetConverter {
      * @param clazz the class we want to deserialize the given collection.
      * @return instance of the type [T] or null if [JsonSyntaxException] occurred.
      */
-    override fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T? {
+    override suspend fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T? {
         return try {
             gson.fromJson(gson.toJson(map), clazz)
         } catch (e: JsonSyntaxException) {

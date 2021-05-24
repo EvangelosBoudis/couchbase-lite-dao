@@ -15,7 +15,7 @@ interface ResultSetConverter {
      * @return instance of the type [T] or null if [Exception] occurred.
      * @see [ResultSetConverterGson.mapToData]
      */
-    fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T?
+    suspend fun <T> mapToData(map: Map<String, Any>, clazz: Class<T>): T?
 
     /**
      * Converts the given [ResultSet.allResults] to a list of type [T].
@@ -25,7 +25,7 @@ interface ResultSetConverter {
      * @return list of type [T]. The size can be equal or less than the number of given results.
      * @see [ResultSetConverterGson.resultSetToData]
      */
-    fun <T> resultSetToData(resultSet: ResultSet, clazz: Class<T>): List<T> {
+    suspend fun <T> resultSetToData(resultSet: ResultSet, clazz: Class<T>): List<T> {
         return resultSet.allResults().mapNotNull { result ->
             /*
             * We have two options in order to query data from CouchbaseLite:

@@ -15,7 +15,7 @@ interface DocumentConverter: ResultSetConverter, IdentifierFinder {
      * @param documentType the type of Couchbase Document to apply into map.
      * @return map or null if [Exception] occurred.
      */
-    fun <T> dataToMap(data: T, documentType: String): Map<String, Any>?
+    suspend fun <T> dataToMap(data: T, documentType: String): Map<String, Any>?
 
     /**
      * Converts the given instance of type [T] to [MutableDocument].
@@ -24,7 +24,7 @@ interface DocumentConverter: ResultSetConverter, IdentifierFinder {
      * @param clazz the class we want to convert the given instances.
      * @return mutable document or null if [Exception] occurred.
      */
-    fun <T> dataToMutableDocument(data: T, documentType: String, clazz: Class<T>): MutableDocument? {
+    suspend fun <T> dataToMutableDocument(data: T, documentType: String, clazz: Class<T>): MutableDocument? {
         return dataToMap(data, documentType)?.let { map ->
             val id = findId(data, clazz)
             MutableDocument(id, map)

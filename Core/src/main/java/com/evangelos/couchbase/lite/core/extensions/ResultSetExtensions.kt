@@ -9,9 +9,7 @@ import com.evangelos.couchbase.lite.core.converters.ResultSetConverter
  * @param clazz the class we want to convert the given results.
  * @return list of type [T]. The size can be equal or less than the number of given results.
  * */
-fun <T> ResultSet.toData(
+suspend fun <T> ResultSet.toData(
     converter: ResultSetConverter,
     clazz: Class<T>
 ): List<T> = converter.resultSetToData(this, clazz)
-
-// TODO: Suspend cause it is blocking!

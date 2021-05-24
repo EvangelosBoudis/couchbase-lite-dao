@@ -38,7 +38,7 @@ suspend fun <T> Query.toData(
  * @return A flow that emits changes as long as it is observed.
  * @see [com.couchbase.lite.Query.addChangeListener]
  * */
-fun Query.observeChange(
+private fun Query.observeChange(
     executor: Executor = Executors.newSingleThreadExecutor()
 ): Flow<QueryChange> = callbackFlow {
     val token = addChangeListener(executor) { change ->
@@ -53,14 +53,6 @@ fun Query.observeChange(
         removeChangeListener(token)
     }
 }.flowOn(Dispatchers.IO)
-
-/*fun Query.observeResultSet(
-    executor: Executor = Executors.newSingleThreadExecutor(),
-): Flow<ResultSet> {
-    return observeChange(executor)
-        .map { change -> change.results }
-        .flowOn(Dispatchers.IO)
-}*/
 
 /**
  * Returns a [Flow] that triggers every time a change occur in the query results
@@ -82,6 +74,22 @@ fun <T> Query.observeData(
         .flowOn(Dispatchers.IO)
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////
+/// GSON
+//////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Returns a [List] of [T] instances using the [ResultSetConverter.resultSetToData] right after the query execution.
+ * @param converter converter to transform [ResultSet] to a [List] of [T].
+ * @param clazz the class we want to convert the given results.
+ * @return list of type [T]. The size can be equal or less than the number of given results.
+ * @throws CouchbaseLiteException
+ * */
+suspend fun <T> Query.toData(
+    converter: Gson = Gson(),
+    clazz: Class<T>
+): List<T> = toData(ResultSetConverterGson(converter), clazz)
+
 /**
  * Returns a [Flow] that triggers every time a change occur in the query results
  * and then converts [QueryChange] into [T].
@@ -97,8 +105,4 @@ fun <T> Query.observeData(
     executor: Executor = Executors.newSingleThreadExecutor(),
     converter: Gson = Gson(),
     clazz: Class<T>
-): Flow<List<T>> {
-    return observeChange(executor)
-        .map { change -> ResultSetConverterGson(converter).resultSetToData(change.results, clazz) }
-        .flowOn(Dispatchers.IO)
-}
+): Flow<List<T>> = observeData(executor, ResultSetConverterGson(converter), clazz)

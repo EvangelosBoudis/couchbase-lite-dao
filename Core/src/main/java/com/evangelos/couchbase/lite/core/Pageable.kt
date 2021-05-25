@@ -14,7 +14,7 @@ import com.couchbase.lite.Ordering
 data class Pageable(
     val pageNo: Int,
     val pageSize: Int,
-    val order: Map<String, Boolean>
+    val order: Map<String, Boolean> = mapOf()
 ) {
 
     /**
@@ -22,7 +22,7 @@ data class Pageable(
      * */
     val offset: Int
         get() {
-            return pageSize + pageNo
+            return pageSize * pageNo
         }
 
     /**

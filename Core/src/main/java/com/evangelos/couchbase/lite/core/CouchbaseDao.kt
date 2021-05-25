@@ -41,6 +41,13 @@ interface CouchbaseDao<T> {
      * @param pageable object for Paging retrieve.
      * @return all documents.
      * @see [CouchbaseDaoImpl.findAll(Pageable)]
+     *
+     * Example:
+     * val pageable = Pageable(0, 10, mapOf(
+     *     "name" to false, // descending
+     *     "description" to true // ascending
+     * ))
+     * findAll(pageable)
      */
     suspend fun findAll(pageable: Pageable): List<T>
 
@@ -63,6 +70,7 @@ interface CouchbaseDao<T> {
     /**
      * Returns all instances of the type [T] with the given IDs.
      * If some or all ids are not found, no documents are returned for these IDs.
+     * Note that the order of elements in the result is not guaranteed.
      * @param ids unique keys.
      * @return documents. The size can be equal or less than the number of given ids.
      * @see [CouchbaseDaoImpl.findAllById]

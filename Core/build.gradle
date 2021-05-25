@@ -39,15 +39,13 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "androidx.core:core-ktx:$ktxVersion"
-    implementation "androidx.appcompat:appcompat:$appCompatVersion"
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$testExtJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
-
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-    implementation "com.couchbase.lite:couchbase-lite-android:$couchbaseLiteVersion"
     implementation "com.google.code.gson:gson:$gsonVersion"
+    compileOnly "com.couchbase.lite:couchbase-lite-java:2.7.0"
+
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "org.mockito:mockito-inline:$mockitoVersion"
+    testImplementation "com.couchbase.lite:couchbase-lite-java:$couchbaseLiteVersion"
+    // testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"
 }

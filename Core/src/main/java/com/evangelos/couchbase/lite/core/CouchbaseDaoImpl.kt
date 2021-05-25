@@ -170,6 +170,7 @@ open class CouchbaseDaoImpl<T>(
     /**
      * Retrieves all documents identified by the given ids.
      * If some or all ids are not found, no documents are returned for these IDs.
+     * Note that the order of elements in the result is not guaranteed.
      * @param ids documents unique keys.
      * @return documents. The size can be equal or less than the number of given ids.
      * @throws [CouchbaseLiteException].
@@ -287,7 +288,7 @@ open class CouchbaseDaoImpl<T>(
     /**
      * Deletes the document identified by the given id.
      * @param id the unique key of the document to be deleted.
-     * @throws [CouchbaseLiteException].
+     * @throws [CouchbaseLiteException] if id does not exist in database.
      */
     override suspend fun deleteById(id: String) = withContext(Dispatchers.IO) {
         deleteAllById(arrayListOf(id), bulk = false)
@@ -296,7 +297,7 @@ open class CouchbaseDaoImpl<T>(
     /**
      * Deletes the given document.
      * @param data document to be deleted.
-     * @throws [CouchbaseLiteException].
+     * @throws [CouchbaseLiteException] if document does not exist in database.
      */
     override suspend fun delete(data: T) = withContext(Dispatchers.IO) {
         deleteAll(arrayListOf(data), bulk = false)
@@ -306,7 +307,7 @@ open class CouchbaseDaoImpl<T>(
      * Deletes the documents identified by the given ids.
      * @param ids the unique keys of the documents to be deleted.
      * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
-     * @throws [CouchbaseLiteException].
+     * @throws [CouchbaseLiteException] if some ids does not exist in database.
      */
     override suspend fun deleteAllById(ids: List<String>, bulk: Boolean) = withContext(Dispatchers.IO) {
         val documents = findAllDocumentsById(ids)
@@ -323,7 +324,7 @@ open class CouchbaseDaoImpl<T>(
      * Deletes the given documents.
      * @param data documents to be deleted.
      * @param bulk operation type. If it is true the deletion is done by using [com.couchbase.lite.Database.inBatch].
-     * @throws [CouchbaseLiteException].
+     * @throws [CouchbaseLiteException] if some document does not exist in database.
      */
     override suspend fun deleteAll(data: List<T>, bulk: Boolean) = withContext(Dispatchers.IO) {
         deleteAllById(docConverter.findAllId(data, clazz), bulk)
@@ -427,7 +428,7 @@ open class CouchbaseDaoImpl<T>(
 
 /*
 * TODO:
-*  1. License + Documentation inside README (like MOLO)
+*  1. License + Documentation inside README (like MOLO) + Dao Subclass
 *  2. Mockito Testing
 *  3. Icon of test pass
 * */

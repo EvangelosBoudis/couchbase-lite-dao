@@ -9,14 +9,14 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
-import org.mockito.Mockito
+import org.mockito.Mockito.*
 import java.util.concurrent.Executor
 
 class QueryExtensionsTest {
 
     @Test
-    fun `when query succeeds then result are emitted by the flow`() = runBlocking {
-        val resultSet = Mockito.mock(ResultSet::class.java)
+    fun `when query succeed, results emitted by the flow`() = runBlocking {
+        val resultSet = mock(ResultSet::class.java)
         val query = createMockQuery { listener ->
             val queryChange = createMockQueryChange(resultSet) // mock successful query change
             listener.changed(queryChange) // manual call
@@ -29,7 +29,7 @@ class QueryExtensionsTest {
     }
 
     @Test
-    fun `when query fails then the flow fails`() = runBlocking {
+    fun `when query fails, flow fails`() = runBlocking {
         val query = createMockQuery { listener ->
             val queryChange = createMockQueryChange(error = CouchbaseLiteException("Forced exception")) // mock unsuccessful query change
             listener.changed(queryChange)
@@ -44,26 +44,26 @@ class QueryExtensionsTest {
     }
 
     @Test
-    fun `when the flow is cancelled then the query is stopped`() = runBlocking {
-        val token = Mockito.mock(ListenerToken::class.java)
-        val resultSet = Mockito.mock(ResultSet::class.java)
+    fun `when flow cancelled, query listener stops`() = runBlocking {
+        val token = mock(ListenerToken::class.java)
+        val resultSet = mock(ResultSet::class.java)
         val query = createMockQuery { listener ->
             val queryChange = createMockQueryChange(resultSet) // mock successful query change
             listener.changed(queryChange)
             token
         }
         query.observeChange().take(1).collect() // dispose after first emission
-        Mockito.verify(query).removeChangeListener(token) // verify removeChangeListener fun called once
+        verify(query).removeChangeListener(token) // verify removeChangeListener fun called once
     }
 
     private fun createMockQuery(
         completion: (QueryChangeListener) -> ListenerToken
     ): Query {
-        val query = Mockito.mock(Query::class.java)
-        Mockito.`when`(
+        val query = mock(Query::class.java)
+        `when`(
             query.addChangeListener(
-                Mockito.any(Executor::class.java),
-                Mockito.any(QueryChangeListener::class.java)
+                any(Executor::class.java),
+                any(QueryChangeListener::class.java)
             )
         ).thenAnswer { invocation ->
             val funParameter = invocation.arguments[1] as QueryChangeListener
@@ -73,12 +73,12 @@ class QueryExtensionsTest {
     }
 
     private fun createMockQueryChange(
-        resultSet: ResultSet = Mockito.mock(ResultSet::class.java),
+        resultSet: ResultSet = mock(ResultSet::class.java),
         error: Throwable? = null
     ): QueryChange {
-        val queryChange = Mockito.mock(QueryChange::class.java)
-        Mockito.`when`(queryChange.results).thenReturn(resultSet)
-        Mockito.`when`(queryChange.error).thenReturn(error)
+        val queryChange = mock(QueryChange::class.java)
+        `when`(queryChange.results).thenReturn(resultSet)
+        `when`(queryChange.error).thenReturn(error)
         return queryChange
     }
 

@@ -84,7 +84,6 @@ class CouchbaseDaoTest {
         val users = testUtil.users.subList(0, 200)
         val sortedUsers = users.sortedBy { it.email }
         dao.saveAll(users)
-        assertEquals(dao.findAll(), users)
         assertEquals(
             sortedUsers.subList(0, 20),
             dao.findAll(Pageable(0, 20, mapOf("email" to true)))
@@ -129,8 +128,8 @@ class CouchbaseDaoTest {
 
     @Test
     fun `save all and find all ids`() = runBlocking {
-        val users = testUtil.users.subList(200, 400)
         assertTrue(dao.findAllId().isEmpty())
+        val users = testUtil.users.subList(200, 400)
         dao.saveAll(users, false)
         assertEquals(dao.findAllId(), users.map { it.email })
         val moreUsers = testUtil.users.subList(0, 100)
@@ -162,8 +161,11 @@ class CouchbaseDaoTest {
         val users = testUtil.users.subList(20, 400)
         dao.saveAll(users, true)
         assertEquals(dao.findAll(), users)
-        dao.deleteAllById(users.map { it.email }, false)
-        assertNull(dao.findOne())
+        val usersSubset = users.filterIndexed { index, _ ->
+            index %2 == 0
+        }
+        dao.deleteAllById(usersSubset.map { it.email }, false)
+        assertEquals(dao.count(), users.size - usersSubset.size)
     }
 
     @Test
@@ -190,7 +192,6 @@ class CouchbaseDaoTest {
         assertEquals(dao.findOne(), user)
         val updatedUser = user.copy(age = 100, balance = 500.5f)
         dao.update(updatedUser)
-        assertNotEquals(dao.findOne(), user)
         assertEquals(dao.findOne(), updatedUser)
     }
 
@@ -203,7 +204,6 @@ class CouchbaseDaoTest {
             user.copy(age = user.age + index)
         }
         dao.updateAll(updatedUsers, true)
-        assertNotEquals(dao.findAll(), users)
         assertEquals(dao.findAll(), updatedUsers)
     }
 

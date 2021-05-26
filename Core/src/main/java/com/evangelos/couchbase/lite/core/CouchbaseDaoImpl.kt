@@ -436,18 +436,4 @@ open class CouchbaseDaoImpl<T>(
         }
     }
 
-/*    private fun printToConsole(funName: String, msg: String) {
-        Log.i("CouchbaseDaoImpl", "$funName: $msg")
-    }*/
-
 }
-
-/*
-* TODO:
-*  1. License + Documentation inside README (like MOLO) + Dao Subclass
-*  2. Mockito Testing
-*  3. Icon of test pass
-* */
-
-// https://kotlinlang.org/docs/exceptions.html#checked-exceptions
-// Documentation about Transactional with different DAO types

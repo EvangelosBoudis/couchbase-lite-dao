@@ -5,7 +5,6 @@ import com.couchbase.lite.Database
 import com.couchbase.lite.DatabaseConfiguration
 import com.evangelos.couchbase.lite.core.util.TestUtil
 import com.evangelos.couchbase.lite.core.util.UserData
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -19,29 +18,21 @@ class CouchbaseDaoTest {
 
     @JvmField @Rule val tempDir = TemporaryFolder()
 
-    private val database: Database by lazy {
-        val name = "test-database.db"
-        val config = DatabaseConfiguration().setDirectory(tempDir.root.absolutePath)
-        Database(name, config)
-    }
-
-    private val converter: Gson by lazy {
-        GsonBuilder()
-            .setDateFormat("dd/MM/yyyy")
-            .create()
-    }
-
-    private val testUtil: TestUtil by lazy {
-        TestUtil(converter)
-    }
-
-    private val dao: CouchbaseDao<UserData> by lazy {
-        CouchbaseDaoImpl(database, converter, UserData::class.java)
-    }
+    private lateinit var testUtil: TestUtil
+    private lateinit var dao: CouchbaseDao<UserData>
 
     @Before
     fun setUp() {
         CouchbaseLite.init()
+        val database = Database(
+            "test-database.db",
+            DatabaseConfiguration().setDirectory(tempDir.root.absolutePath)
+        )
+        val gson = GsonBuilder()
+            .setDateFormat("dd/MM/yyyy")
+            .create()
+        testUtil = TestUtil(gson)
+        dao = CouchbaseDaoImpl(database, gson, UserData::class.java)
     }
 
     @Test

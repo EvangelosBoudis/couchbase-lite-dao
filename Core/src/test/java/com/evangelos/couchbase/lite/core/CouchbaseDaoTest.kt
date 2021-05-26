@@ -3,8 +3,11 @@ package com.evangelos.couchbase.lite.core
 import com.couchbase.lite.CouchbaseLite
 import com.couchbase.lite.Database
 import com.couchbase.lite.DatabaseConfiguration
+import com.evangelos.couchbase.lite.core.util.TestUtil
+import com.evangelos.couchbase.lite.core.util.UserData
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -39,6 +42,15 @@ class CouchbaseDaoTest {
     @Before
     fun setUp() {
         CouchbaseLite.init()
+    }
+
+    @Test
+    fun `save-delete all and observe all`() = runBlocking {
+        val users = testUtil.users.subList(10, 20)
+        dao.saveAll(users)
+        assertEquals(dao.observeAll().firstOrNull(), users)
+        dao.deleteAll()
+        assertEquals(dao.observeAll().firstOrNull(), emptyList<UserData>())
     }
 
     @Test

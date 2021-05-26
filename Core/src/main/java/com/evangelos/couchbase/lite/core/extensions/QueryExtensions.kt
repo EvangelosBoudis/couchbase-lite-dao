@@ -1,9 +1,6 @@
 package com.evangelos.couchbase.lite.core.extensions
 
-import com.couchbase.lite.CouchbaseLiteException
-import com.couchbase.lite.Query
-import com.couchbase.lite.QueryChange
-import com.couchbase.lite.ResultSet
+import com.couchbase.lite.*
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverter
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverterGson
 import com.google.gson.Gson
@@ -36,7 +33,7 @@ suspend fun <T> Query.toData(
  * @return A flow that emits changes as long as it is observed.
  * @see [com.couchbase.lite.Query.addChangeListener]
  * */
-private fun Query.observeChange(
+fun Query.observeChange(
     executor: Executor = Executors.newSingleThreadExecutor()
 ): Flow<QueryChange> = callbackFlow {
     val token = addChangeListener(executor) { change ->

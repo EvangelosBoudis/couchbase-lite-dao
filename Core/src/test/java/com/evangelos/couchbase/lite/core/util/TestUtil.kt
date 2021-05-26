@@ -1,4 +1,4 @@
-package com.evangelos.couchbase.lite.core
+package com.evangelos.couchbase.lite.core.util
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

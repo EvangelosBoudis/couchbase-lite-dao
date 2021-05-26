@@ -1,5 +1,7 @@
-package com.evangelos.couchbase.lite.core
+package com.evangelos.couchbase.lite.core.util
 
+import com.evangelos.couchbase.lite.core.CouchbaseDocument
+import com.evangelos.couchbase.lite.core.Id
 import com.google.gson.annotations.SerializedName
 import java.util.*
 

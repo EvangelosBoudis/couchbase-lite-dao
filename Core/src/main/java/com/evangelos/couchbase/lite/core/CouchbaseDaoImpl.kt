@@ -152,7 +152,7 @@ open class CouchbaseDaoImpl<T>(
     }
 
     /**
-     * Returns whether a document with the given id exists.
+     * Returns whether a document with the given id exists. The type-property of the document must coincides with the [documentType].
      * @param id document unique key.
      * @return true if a document with the given id exists, false otherwise.
      * @throws [CouchbaseLiteException].
@@ -162,13 +162,16 @@ open class CouchbaseDaoImpl<T>(
         val query: Query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(database))
-            .where(Meta.id.equalTo(Expression.string(id)))
+            .where(
+                Meta.id.equalTo(Expression.string(id))
+                    .and(Expression.property(TYPE).equalTo(Expression.string(documentType)))
+            )
 
         query.execute().allResults().size > 0
     }
 
     /**
-     * Retrieves a document by its id.
+     * Retrieves a document by its id. The type-property of the document must coincides with the [documentType].
      * @param id document unique key.
      * @return the document with the given id or null if none found.
      * @throws [CouchbaseLiteException].
@@ -178,13 +181,16 @@ open class CouchbaseDaoImpl<T>(
         val query: Query = QueryBuilder
             .select(SelectResult.all())
             .from(DataSource.database(database))
-            .where(Meta.id.equalTo(Expression.string(id)))
+            .where(
+                Meta.id.equalTo(Expression.string(id))
+                    .and(Expression.property(TYPE).equalTo(Expression.string(documentType)))
+            )
 
         query.toData(docConverter, clazz).firstOrNull()
     }
 
     /**
-     * Retrieves all documents identified by the given ids.
+     * Retrieves all documents identified by the given ids. The type-property of the documents must coincides with the [documentType].
      * If some or all ids are not found, no documents are returned for these IDs.
      * Note that the order of elements in the result is not guaranteed.
      * @param ids documents unique keys.
@@ -200,7 +206,10 @@ open class CouchbaseDaoImpl<T>(
         val query: Query = QueryBuilder
             .select(SelectResult.all())
             .from(DataSource.database(database))
-            .where(Meta.id.`in`(*values))
+            .where(
+                Meta.id.`in`(*values)
+                    .and(Expression.property(TYPE).equalTo(Expression.string(documentType)))
+            )
 
         query.toData(docConverter, clazz)
     }

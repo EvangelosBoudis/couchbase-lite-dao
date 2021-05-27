@@ -25,35 +25,35 @@ import kotlinx.coroutines.flow.Flow
 interface CouchbaseDao<T> {
 
     /**
-     * Returns an Observable that monitors changes about Documents.
+     * Returns an Observable that monitors changes about [T] type documents.
      * @return Documents Flow.
      * @see [CouchbaseDaoImpl.observeAll]
      * */
     fun observeAll(): Flow<List<T>>
 
     /**
-     * Returns the number of documents available.
+     * Returns the number of [T] type documents available.
      * @return number of documents.
      * @see [CouchbaseDaoImpl.count]
      */
     suspend fun count(): Int
 
     /**
-     * Returns a single instance of the type [T] or null if none was found.
+     * Returns a single [T] type document or null if none was found.
      * @return optional document.
      * @see [CouchbaseDaoImpl.findOne]
      * */
     suspend fun findOne(): T?
 
     /**
-     * Returns all instances of the type [T].
+     * Returns all [T] type documents.
      * @return all documents.
      * @see [CouchbaseDaoImpl.findAll]
      */
     suspend fun findAll(): List<T>
 
     /**
-     * Returns all instances of the type [T].
+     * Returns all [T] type documents.
      * @param pageable object for Paging retrieve.
      * @return all documents.
      * @see [CouchbaseDaoImpl.findAll(Pageable)]
@@ -68,7 +68,7 @@ interface CouchbaseDao<T> {
     suspend fun findAll(pageable: Pageable): List<T>
 
     /**
-     * Returns whether a document with the given id exists.
+     * Returns whether a [T] type document with the given id exists.
      * @param id unique key
      * @return true if a document with the given id exists, false otherwise.
      * @see [CouchbaseDaoImpl.existsById]
@@ -76,7 +76,7 @@ interface CouchbaseDao<T> {
     suspend fun existsById(id: String): Boolean
 
     /**
-     * Retrieves a document by its id.
+     * Retrieves a [T] type document by its id.
      * @param id unique key.
      * @return the document with the given id or null if none found.
      * @see [CouchbaseDaoImpl.findById]
@@ -84,8 +84,8 @@ interface CouchbaseDao<T> {
     suspend fun findById(id: String): T?
 
     /**
-     * Returns all instances of the type [T] with the given IDs.
-     * If some or all ids are not found, no documents are returned for these IDs.
+     * Returns all [T] type documents with the given ids.
+     * If some or all ids are not found, no documents are returned for these ids.
      * Note that the order of elements in the result is not guaranteed.
      * @param ids unique keys.
      * @return documents. The size can be equal or less than the number of given ids.
@@ -94,7 +94,7 @@ interface CouchbaseDao<T> {
     suspend fun findAllById(ids: List<String>): List<T>
 
     /**
-     * Returns all ids of instances of the type [T].
+     * Returns all [T] type documents ids.
      * @return unique keys.
      * @see [CouchbaseDaoImpl.findAllId]
      */
@@ -130,7 +130,7 @@ interface CouchbaseDao<T> {
     suspend fun delete(data: T)
 
     /**
-     * Deletes all instances of the type [T] with the given IDs.
+     * Deletes all [T] type documents with the given ids.
      * @param ids the unique keys of the documents to be deleted.
      * @param bulk operation type. If bulk is true the deletion gonna be Transactional.
      * @see [CouchbaseDaoImpl.deleteAllById]
@@ -146,7 +146,7 @@ interface CouchbaseDao<T> {
     suspend fun deleteAll(data: List<T>, bulk: Boolean = true)
 
     /**
-     * Deletes all documents managed by the dao.
+     * Deletes all [T] type documents.
      * @param bulk operation type. If bulk is true the deletion gonna be Transactional.
      * @see [CouchbaseDaoImpl.deleteAll(Boolean)]
      */
@@ -168,14 +168,14 @@ interface CouchbaseDao<T> {
     suspend fun updateAll(data: List<T>, bulk: Boolean = true)
 
     /**
-     * Replaces all instances of the type [T] with the given.
+     * Replaces all [T] type documents with the given.
      * @param data document to be saved.
      * @see [CouchbaseDaoImpl.replace]
      * */
     suspend fun replace(data: T)
 
     /**
-     * Replaces all instances of the type [T] with the given.
+     * Replaces all [T] type documents with the given.
      * @param data documents to be saved.
      * @see [CouchbaseDaoImpl.replaceAll]
      * */

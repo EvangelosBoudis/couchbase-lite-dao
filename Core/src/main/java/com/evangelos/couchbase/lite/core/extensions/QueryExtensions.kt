@@ -40,7 +40,9 @@ import java.util.concurrent.Executors
 suspend fun <T> Query.toData(
     converter: ResultSetConverter,
     clazz: Class<T>
-): List<T> = execute().toData(converter, clazz)
+): List<T> = withContext(Dispatchers.IO) {
+    execute().toData(converter, clazz)
+}
 
 /**
  * Returns a [Flow] that it is responsible to register and unregister a [com.couchbase.lite.QueryChangeListener].
@@ -99,9 +101,7 @@ fun <T> Query.observeData(
 suspend fun <T> Query.toData(
     converter: Gson = Gson(),
     clazz: Class<T>
-): List<T> = withContext(Dispatchers.IO) {
-    toData(ResultSetConverterGson(converter), clazz)
-}
+): List<T> = toData(ResultSetConverterGson(converter), clazz)
 
 /**
  * Returns a [Flow] that triggers every time a change occur in the query results

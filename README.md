@@ -30,7 +30,6 @@ implementation "com.github.evangelos:couchbase-lite-dao:1.0.0"
 ```
   
 ## Features
-
 Here are the main features that Couchbase Lite DAO provides for
 boosting the integration of the Couchbase Lite SDK with Kotlin.
 
@@ -49,30 +48,77 @@ boosting the integration of the Couchbase Lite SDK with Kotlin.
 ### Document annotations
 All documents should be annotated with the `@Document` annotation, but it is not a requirement.
 <br/>
-The `@Id` annotation needs to be present because every document in Couchbase Lite needs a unique key. This key needs to be any string with a length of maximum 250 characters. Feel free to use whatever fits your use case, be it a UUID, an email address or anything else.
-The following code is an example of a simple document that defines a Dog with properties for id, name, age, weight, vaccinated and date of birth:
+The `@Id` annotation needs to be present because every document in Couchbase Lite needs a unique key. Feel free to use whatever key fits your use case, be it a UUID, an email address or anything else.
+<br/><br/>
+The following code is an example of a simple document that defines a User with properties for id, name, favorite number, height, if he/she has a pet and date of birth:
   
 ```kotlin
-@Document("dog_document")
-data class Dog(
+@Document("user_doc")
+data class UserData(
     @Id val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val age: Int,
-    val weight: Float,
-    val vaccinated: Boolean,
-    @com.google.gson.annotations.SerializedName("date_of_birth") val dob: Date
+    @SerializedName("favorite_number") val favoriteNumber: Int,
+    val height: Float,
+    @SerializedName("has_pet") val hasPet: Boolean,
+    @SerializedName("date_of_birth") val dob: Date
 )
 ```
-
-As we mention above we use GSON as converter so you are free to use any annotation that GSON library provides.
-  
+As we mention we use GSON library as converter, so we are free to use any annotation that provides, for example `@SerializedName`   
   
 ### Non-blocking generic dao
 
+```kotlin
+val database = Database("my-database.db", DatabaseConfiguration())
+
+val gson = GsonBuilder()
+            .setDateFormat("dd/MM/yyyy")
+            .create()
+  
+val userDao: CouchbaseDao<UserData> = CouchbaseDaoImpl(database, gson, UserData::class.java)
+```
+
+If `CouchbaseDao` does not provide some of the methods you desire, you can define your own custom methods by creating a subclass.
+
+```kotlin
+data class UserDto(
+    val id: String,
+    val name: String
+)
+
+interface UserDao: CouchbaseDao<UserData> {
+
+    suspend fun findAllWhereNameContains(searchKey: String): List<UserDto> // Projection
+
+}
+
+class UserDaoImpl(
+    database: Database,
+    gson: Gson
+): CouchbaseDaoImpl<UserData>(database, gson, UserData::class.java), UserDao {
+
+    override suspend fun findAllWhereNameContains(searchKey: String): List<UserDto> {
+        val whereExpression =
+            Expression
+                .property(TYPE).equalTo(Expression.string(documentType)) // REQUIRED in order to fetch ONLY User Documents ("@type" = "user_doc")
+                .and(Expression.property("name").like(Expression.string("%$searchKey%")))
+  
+        return QueryBuilder
+            .select(SelectResult.property("id"), SelectResult.property("name")) // UserDto requires only id & name
+            .from(DataSource.database(database))
+            .where(whereExpression)
+            .toData(docConverter, AccountDto::class.java)
+    }
+
+}
+
+val userDao: UserDao = UserDaoImpl(database, gson)
+```
+
+#### CouchbaseDao documentation
 |Method|Return Type|Description|
 |---|---|---|
-|observeAll()|Flow<T>|Returns an Observable that monitors changes about Documents|
-|count()|Int|Returns the number of documents available|
+|observeAll()|Flow<T>|Returns an Observable that monitors changes about documents of the type T|
+|count()|Int|Returns the number of type T documents available|
 |findOne()|T?|Returns a single instance of the type T or null if none was found|
 |findAll()|List<T>|Returns all instances of the type T|
 |findAll(pageable: Pageable)|List<T>|Returns all instances of the type T, using paging|

@@ -148,7 +148,7 @@ val userDao: UserDao = UserDaoImpl(database, gson)
 
 ### Flow live queries
 
-The `Query.observeChange` extention replaces the `QueryChangeListener` callback with a Flow wich is 
+The `Query.observeChange` extention replaces the `QueryChangeListener` callback with a `Flow` wich is 
 responsible to emit changes, that occur in the query results and to unregister the callback when tears down.
 
 ```kotlin
@@ -170,7 +170,7 @@ val projectionQuery = QueryBuilder
     .from(DataSource.database(database))
     .where(Expression.property(TYPE).equalTo(Expression.string("user_doc")))
 
-// Executes the query and then converts the corresponding ResultSet into a list of type AccountDto.
+// Executes the query and then converts the corresponding ResultSet into a list of UserDto type.
 val users: List<UserDto> = projectionQuery.toData(clazz = UserDto::class.java) 
 
 val liveUsers: Flow<List<UserDto>> = projectionQuery.observeData(clazz = UserDto::class.java)  

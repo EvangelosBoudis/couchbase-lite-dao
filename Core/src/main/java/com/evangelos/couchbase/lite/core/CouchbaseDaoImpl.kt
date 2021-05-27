@@ -51,11 +51,10 @@ open class CouchbaseDaoImpl<T>(
     * If not set, defaults to the class name.
     * */
     protected val documentType: String by lazy {
-       if (!clazz.isAnnotationPresent(CouchbaseDocument::class.java)) {
-           throw IllegalArgumentException("@CouchbaseDocument annotation was not found on $clazz")
-       }
-       val type = clazz.getAnnotation(CouchbaseDocument::class.java)!!.type
-       if (type.isNotBlank()) type else clazz.simpleName
+       val annotationType =
+           if (clazz.isAnnotationPresent(CouchbaseDocument::class.java)) clazz.getAnnotation(CouchbaseDocument::class.java)!!.type
+           else ""
+       if (annotationType.isNotBlank()) annotationType else clazz.simpleName
     }
 
     /**

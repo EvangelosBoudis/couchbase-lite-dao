@@ -31,16 +31,16 @@ interface IdentifierFinder {
      * @throws [IllegalArgumentException] if none was found.
      */
     fun <T> findId(data: T, clazz: Class<T>): String {
-        try {
-            for (field in clazz.declaredFields) {
+        return try {
+            clazz.declaredFields.filter { field ->
                 field.isAccessible = true
-                if (!field.isAnnotationPresent(Id::class.java)) continue
-                return field[data] as String
-            }
+                field.isAnnotationPresent(Id::class.java)
+            }.map { field ->
+                field[data] as String
+            }.firstOrNull()
         } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        throw IllegalArgumentException("@Id annotation was not found on $clazz")
+            null
+        } ?: throw IllegalArgumentException("@Id annotation was not found on $clazz")
     }
 
     /**

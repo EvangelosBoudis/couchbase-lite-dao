@@ -25,7 +25,7 @@ import java.lang.annotation.Inherited
 @Inherited
 @kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
-annotation class CouchbaseDocument(
+annotation class Document(
     /**
      * The type of the document in the CouchbaseLite database. If not set, defaults to the class name.
      */

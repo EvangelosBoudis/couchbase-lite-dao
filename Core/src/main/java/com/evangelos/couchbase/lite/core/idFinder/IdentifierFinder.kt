@@ -19,7 +19,7 @@ package com.evangelos.couchbase.lite.core.idFinder
 import com.evangelos.couchbase.lite.core.Id
 
 /**
- * Interface used to resolve the [com.evangelos.couchbase.lite.core.Id] of a [com.evangelos.couchbase.lite.core.CouchbaseDocument].
+ * Interface used to resolve the [com.evangelos.couchbase.lite.core.Id] of a [com.evangelos.couchbase.lite.core.Document].
  */
 interface IdentifierFinder {
 

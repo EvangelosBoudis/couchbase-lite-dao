@@ -17,6 +17,7 @@
 package com.evangelos.couchbase.lite.core
 
 import com.couchbase.lite.*
+import com.couchbase.lite.Document
 import com.evangelos.couchbase.lite.core.extensions.observeData
 import com.evangelos.couchbase.lite.core.extensions.toData
 import com.evangelos.couchbase.lite.core.converters.DocumentConverter
@@ -47,12 +48,12 @@ open class CouchbaseDaoImpl<T>(
     ) : this(database, DocumentConverterGson(gson), clazz)
 
    /**
-    * Gets the Document Type by accessing the [CouchbaseDocument] annotation of [T] class.
+    * Gets the Document Type by accessing the [com.evangelos.couchbase.lite.core.Document] annotation of [T] class.
     * If not set, defaults to the class name.
     * */
     protected val documentType: String by lazy {
        val annotationType =
-           if (clazz.isAnnotationPresent(CouchbaseDocument::class.java)) clazz.getAnnotation(CouchbaseDocument::class.java)!!.type
+           if (clazz.isAnnotationPresent(com.evangelos.couchbase.lite.core.Document::class.java)) clazz.getAnnotation(com.evangelos.couchbase.lite.core.Document::class.java)!!.type
            else ""
        if (annotationType.isNotBlank()) annotationType else clazz.simpleName
     }

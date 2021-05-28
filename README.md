@@ -4,7 +4,7 @@ Kotlin Data Access Object for Couchbase Lite JVM and Android SDks.
 
 [![](https://jitpack.io/v/EvangelosBoudis/couchbase-lite-dao.svg)](https://jitpack.io/#EvangelosBoudis/couchbase-lite-dao)
 [![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)](https://kotlinlang.org/)
-[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/EvangelosBoudis/couchbase-lite-dao/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <div align="center">
   <sub>Built with ❤︎ by

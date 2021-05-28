@@ -1,6 +1,9 @@
 plugins {
     id 'kotlin'
+    id 'maven-publish'
 }
+
+group = 'com.github.EvangelosBoudis'
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"

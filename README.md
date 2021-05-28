@@ -5,6 +5,7 @@ Kotlin Data Access Object for Couchbase Lite JVM and Android SDks.
 [![](https://jitpack.io/v/EvangelosBoudis/couchbase-lite-dao.svg)](https://jitpack.io/#EvangelosBoudis/couchbase-lite-dao)
 [![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)](https://kotlinlang.org/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/EvangelosBoudis/couchbase-lite-dao/blob/master/LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FEvangelosBoudis%2Fcouchbase-lite-dao.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FEvangelosBoudis%2Fcouchbase-lite-dao?ref=badge_shield)
 
 <div align="center">
   <sub>Built with ❤︎ by
@@ -177,3 +178,7 @@ val users: List<UserDto> = query.toData(clazz = UserDto::class.java)
 val liveUsers: Flow<List<UserDto>> = query.observeData(clazz = UserDto::class.java)  
 ```
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FEvangelosBoudis%2Fcouchbase-lite-dao.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FEvangelosBoudis%2Fcouchbase-lite-dao?ref=badge_large)

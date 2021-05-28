@@ -3,7 +3,6 @@
 Kotlin Data Access Object for Couchbase Lite JVM and Android SDks.
 
 ![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)
-[![Coverage Status](https://img.shields.io/codecov/c/github/mockito/mockito.svg)](https://codecov.io/github/mockito/mockito)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Vaggelis95/couchbase-lite-dao/blob/master/LICENSE)
 
 <div align="center">
@@ -29,17 +28,7 @@ And then to your module `build.gradle` file:
 ```groovy
 implementation "com.github.evangelos:couchbase-lite-dao:1.0.0"
 ```
-  
-## Features
 
-Here are the main features that Couchbase Lite DAO provides for
-boosting the integration of the Couchbase Lite SDK with Kotlin.
-
-- [Document annotations](#document-annotations)
-- [Non-blocking generic dao](#non-blocking-generic-dao)
-- [Flow live queries](#flow-live-queries)
-- [ResultSet serialization](#resultset-serialization)  
-  
 ## Built With
 
 - [Couchbase Lite Java Framework](https://docs.couchbase.com/couchbase-lite/2.7/java-platform.html) - Official Couchbase Lite Java SDK.
@@ -47,10 +36,19 @@ boosting the integration of the Couchbase Lite SDK with Kotlin.
 - [GSON](https://github.com/google/gson) - Java serialization/deserialization library.
 - [Mockito](https://github.com/mockito/mockito) - Mocking framework for unit tests written in Java.
   
+## Features
+
+Here are the main features that Couchbase Lite DAO provides for
+better integration of the Couchbase Lite SDK using Kotlin.
+
+- [Document annotations](#document-annotations)
+- [Non-blocking generic dao](#non-blocking-generic-dao)
+- [Flow live queries](#flow-live-queries)
+- [ResultSet serialization](#resultset-serialization)  
   
 ### Document annotations
 
-All documents should be annotated with the `@Document` annotation, but it is not a requirement.
+Every document should be annotated with the `@Document` annotation, but it is not a requirement.
 <br/>
 The `@Id` annotation needs to be present because every document in Couchbase Lite needs a unique key. Feel free to use whatever key fits your use case, be it a UUID, an email address or anything else.
 <br/><br/>
@@ -119,7 +117,7 @@ data class UserDto(
 
 interface UserDao: CouchbaseDao<UserData> {
 
-    suspend fun findAllWhereNameContains(searchKey: String): List<UserDto> // Projection
+    suspend fun findByNameMatch(searchKey: String): List<UserDto>
 
 }
 
@@ -128,17 +126,15 @@ class UserDaoImpl(
     gson: Gson
 ): CouchbaseDaoImpl<UserData>(database, gson, UserData::class.java), UserDao {
 
-    override suspend fun findAllWhereNameContains(searchKey: String): List<UserDto> {
-        val whereExpression =
-            Expression
-                .property(TYPE).equalTo(Expression.string(documentType)) // REQUIRED in order to fetch ONLY User Documents ("@type" == "user_doc")
-                .and(Expression.property("name").like(Expression.string("%$searchKey%")))
-  
+    override suspend fun findByNameMatch(searchKey: String): List<UserDto> {
         return QueryBuilder
-            .select(SelectResult.property("id"), SelectResult.property("name")) // UserDto requires only id & name
+            .select(SelectResult.property("id"), SelectResult.property("name"))
             .from(DataSource.database(database))
-            .where(whereExpression)
-            .toData(docConverter, AccountDto::class.java)
+            .where(
+                Expression.property(TYPE).equalTo(Expression.string(documentType)) // fetch only user docs ("@type" == "user_doc")
+                    .and(Expression.property("name").like(Expression.string("%$searchKey%")))
+            )
+            .toData(docConverter, UserDto::class.java)
     }
 
 }
@@ -148,8 +144,8 @@ val userDao: UserDao = UserDaoImpl(database, gson)
 
 ### Flow live queries
 
-The `Query.observeChange` extention replaces the `QueryChangeListener` callback with a `Flow` wich is 
-responsible to emit changes, that occur in the query results and to unregister the callback when tears down.
+The `Query.observeChange()` extension transforms the Live Query callback into a Flow Stream, 
+without having to register and unregister a `QueryChangeListener` manually.
 
 ```kotlin
 QueryBuilder
@@ -161,18 +157,22 @@ QueryBuilder
     }
 ```
 
-  
 ### ResultSet serialization
 
+`Query.toData()` and `Query.observeData()` extensions can be used to serialize query results into a desired class.
+<br/>
+More specifically `Query.toData()` extension after query execution and `Query.observeData()` immediately 
+after each change in query results convert the `ResultSet` to the class we specify. 
+If no `Gson` instance is set for serialization, `Gson()` will be used by default.
+
 ```kotlin
-val projectionQuery = QueryBuilder
+val query = QueryBuilder
     .select(SelectResult.property("id"), SelectResult.property("name"))
     .from(DataSource.database(database))
     .where(Expression.property(TYPE).equalTo(Expression.string("user_doc")))
 
-// Executes the query and then converts the corresponding ResultSet into a list of UserDto type.
-val users: List<UserDto> = projectionQuery.toData(clazz = UserDto::class.java) 
+val users: List<UserDto> = query.toData(clazz = UserDto::class.java) 
 
-val liveUsers: Flow<List<UserDto>> = projectionQuery.observeData(clazz = UserDto::class.java)  
+val liveUsers: Flow<List<UserDto>> = query.observeData(clazz = UserDto::class.java)  
 ```
-  
+

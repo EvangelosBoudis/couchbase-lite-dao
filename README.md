@@ -2,12 +2,13 @@
 
 Kotlin Data Access Object for Couchbase Lite JVM and Android SDks.
 
-![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)
-[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Vaggelis95/couchbase-lite-dao/blob/master/LICENSE)
+[![](https://jitpack.io/v/EvangelosBoudis/couchbase-lite-dao.svg)](https://jitpack.io/#EvangelosBoudis/couchbase-lite-dao)
+[![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)](https://kotlinlang.org/)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/EvangelosBoudis/couchbase-lite-dao/blob/master/LICENSE)
 
 <div align="center">
   <sub>Built with ❤︎ by
-  <a href="https://github.com/Vaggelis95">Evangelos Boudis</a>
+  <a href="https://github.com/EvangelosBoudis">Evangelos Boudis</a>
 </div>
 
 ## Installing
@@ -26,7 +27,7 @@ allprojects {
 And then to your module `build.gradle` file:
 
 ```groovy
-implementation "com.github.evangelos:couchbase-lite-dao:1.0.0"
+implementation 'com.github.EvangelosBoudis:couchbase-lite-dao:1.0.2'
 ```
 
 ## Built With

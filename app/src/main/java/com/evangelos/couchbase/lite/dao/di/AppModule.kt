@@ -10,17 +10,13 @@ import com.google.gson.Gson
 
 object AppModule {
 
-    val gson by lazy {
-        Gson()
-    }
-
     val database: Database by lazy {
         val config = DatabaseConfiguration()
         Database(BuildConfig.DATABASE_NAME, config)
     }
 
     val accountDao: CouchbaseDao<AccountData> by lazy {
-        CouchbaseDaoImpl(database, gson, AccountData::class.java)
+        CouchbaseDaoImpl(database, Gson(), AccountData::class.java)
     }
 
 }

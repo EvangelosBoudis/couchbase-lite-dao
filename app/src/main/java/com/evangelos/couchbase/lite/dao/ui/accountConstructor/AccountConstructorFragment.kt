@@ -1,8 +1,9 @@
 package com.evangelos.couchbase.lite.dao.ui.accountConstructor
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.View
+import android.widget.Toast
+import androidx.fragment.app.Fragment
 import com.evangelos.couchbase.lite.dao.R
 import com.evangelos.couchbase.lite.dao.databinding.FragmentAccountDetailsBinding
 import com.evangelos.couchbase.lite.dao.presentation.AccountConstructorViewModel
@@ -23,8 +24,12 @@ class AccountConstructorFragment : Fragment(R.layout.fragment_account_details) {
                     emailField.text?.toString(),
                     usernameField.text?.toString(),
                     passwordField.text?.toString()
-                ).observe(viewLifecycleOwner) {
-                    requireActivity().onBackPressed()
+                ).observe(viewLifecycleOwner) { result ->
+                    result.fold(onSuccess = {
+                        requireActivity().onBackPressed()
+                    }, onFailure = {
+                        Toast.makeText(requireActivity(), it.message, Toast.LENGTH_SHORT).show()
+                    })
                 }
             }
         }

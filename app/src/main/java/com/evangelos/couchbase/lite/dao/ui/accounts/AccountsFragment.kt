@@ -2,6 +2,7 @@ package com.evangelos.couchbase.lite.dao.ui.accounts
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -42,7 +43,13 @@ class AccountsFragment : Fragment(
 
     override fun onClick(view: View, model: AccountDto, position: Int) {
         if (view.id == R.id.delete_btn) {
-            viewModel.deleteAccount(model.id)
+            viewModel.deleteAccount(model.id).observe(viewLifecycleOwner) { result ->
+                result.fold(onSuccess = {
+                    Toast.makeText(requireActivity(), "Deleted!", Toast.LENGTH_SHORT).show()
+                }, onFailure = {
+                    Toast.makeText(requireActivity(), it.message, Toast.LENGTH_SHORT).show()
+                })
+            }
         } else {
             val action = AccountsFragmentDirections.actionItemsToItemDetails(model.id)
             navController.navigate(action)
@@ -56,10 +63,22 @@ class AccountsFragment : Fragment(
                 navController.navigate(R.id.action_items_to_itemConstructor)
             }
             R.id.restore_btn -> {
-                viewModel.restoreAccounts()
+                viewModel.restoreAccounts().observe(viewLifecycleOwner) { result ->
+                    result.fold(onSuccess = {
+                        Toast.makeText(requireActivity(), "Restored!", Toast.LENGTH_SHORT).show()
+                    }, onFailure = {
+                        Toast.makeText(requireActivity(), it.message, Toast.LENGTH_SHORT).show()
+                    })
+                }
             }
             R.id.delete_btn -> {
-                viewModel.deleteAccounts()
+                viewModel.deleteAccounts().observe(viewLifecycleOwner) { result ->
+                    result.fold(onSuccess = {
+                        Toast.makeText(requireActivity(), "Deleted!", Toast.LENGTH_SHORT).show()
+                    }, onFailure = {
+                        Toast.makeText(requireActivity(), it.message, Toast.LENGTH_SHORT).show()
+                    })
+                }
             }
         }
     }

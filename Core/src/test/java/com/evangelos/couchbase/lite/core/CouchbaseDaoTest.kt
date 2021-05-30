@@ -34,7 +34,7 @@ class CouchbaseDaoTest {
 
     @JvmField @Rule val tempDir = TemporaryFolder()
 
-    private lateinit var testUtil: TestUtil
+    private val testUtil = TestUtil()
     private lateinit var dao: CouchbaseDao<UserData>
 
     @Before
@@ -44,17 +44,9 @@ class CouchbaseDaoTest {
             "test-database.db",
             DatabaseConfiguration().setDirectory(tempDir.root.absolutePath)
         )
-        testUtil = TestUtil(
-            GsonBuilder()
-                .setDateFormat("dd/MM/yyyy")
-                .create()
-        )
         dao = CouchbaseDaoImpl(
-            database,
-            GsonBuilder()
-                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                .create(),
-            UserData::class.java
+            database = database,
+            clazz = UserData::class.java
         )
     }
 

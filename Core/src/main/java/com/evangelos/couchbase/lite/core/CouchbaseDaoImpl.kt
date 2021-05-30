@@ -23,6 +23,7 @@ import com.evangelos.couchbase.lite.core.extensions.toData
 import com.evangelos.couchbase.lite.core.converters.DocumentConverter
 import com.evangelos.couchbase.lite.core.converters.DocumentConverterGson
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -43,7 +44,9 @@ open class CouchbaseDaoImpl<T>(
 
     constructor(
         database: Database,
-        gson: Gson = Gson(),
+        gson: Gson = GsonBuilder()
+            .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
+            .create(),
         clazz: Class<T>
     ) : this(database, DocumentConverterGson(gson), clazz)
 

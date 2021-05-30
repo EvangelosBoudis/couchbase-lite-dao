@@ -16,15 +16,18 @@
 
 package com.evangelos.couchbase.lite.core.util
 
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
-class TestUtil(private val converter: Gson) {
+class TestUtil {
 
     val users: List<UserData> by lazy {
+        val gson = GsonBuilder()
+            .setDateFormat("dd/MM/yyyy")
+            .create()
         val usersListType: Type = object : TypeToken<ArrayList<UserData>>() {}.type
-        converter.fromJson(json, usersListType)
+        gson.fromJson(json, usersListType)
     }
 
     // Data generated from Mockaroo -> https://www.mockaroo.com/

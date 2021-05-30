@@ -17,9 +17,11 @@
 package com.evangelos.couchbase.lite.core.extensions
 
 import com.couchbase.lite.*
+import com.evangelos.couchbase.lite.core.COUCHBASE_LITE_DATE_FORMAT
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverter
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverterGson
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -99,7 +101,9 @@ fun <T> Query.observeData(
  * @throws CouchbaseLiteException
  * */
 suspend fun <T> Query.toData(
-    converter: Gson = Gson(),
+    converter: Gson = GsonBuilder()
+        .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
+        .create(),
     clazz: Class<T>
 ): List<T> = toData(ResultSetConverterGson(converter), clazz)
 
@@ -116,6 +120,8 @@ suspend fun <T> Query.toData(
  * */
 fun <T> Query.observeData(
     executor: Executor = Executors.newSingleThreadExecutor(),
-    converter: Gson = Gson(),
+    converter: Gson = GsonBuilder()
+        .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
+        .create(),
     clazz: Class<T>
 ): Flow<List<T>> = observeData(executor, ResultSetConverterGson(converter), clazz)

@@ -44,11 +44,18 @@ class CouchbaseDaoTest {
             "test-database.db",
             DatabaseConfiguration().setDirectory(tempDir.root.absolutePath)
         )
-        val gson = GsonBuilder()
-            .setDateFormat("dd/MM/yyyy")
-            .create()
-        testUtil = TestUtil(gson)
-        dao = CouchbaseDaoImpl(database, gson, UserData::class.java)
+        testUtil = TestUtil(
+            GsonBuilder()
+                .setDateFormat("dd/MM/yyyy")
+                .create()
+        )
+        dao = CouchbaseDaoImpl(
+            database,
+            GsonBuilder()
+                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                .create(),
+            UserData::class.java
+        )
     }
 
     @Test
@@ -89,19 +96,19 @@ class CouchbaseDaoTest {
     @Test
     fun `save and find with paging`() = runBlocking {
         val users = testUtil.users.subList(0, 200)
-        val sortedUsers = users.sortedBy { it.email }
+        val sortedUsers = users.sortedByDescending { it.joinDate }
         dao.saveAll(users)
         assertEquals(
             sortedUsers.subList(0, 20),
-            dao.findAll(Pageable(0, 20, mapOf("email" to true)))
+            dao.findAll(Pageable(0, 20, mapOf("join_date" to false)))
         )
         assertEquals(
             sortedUsers.subList(20, 40),
-            dao.findAll(Pageable(1, 20, mapOf("email" to true)))
+            dao.findAll(Pageable(1, 20, mapOf("join_date" to false)))
         )
         assertEquals(
             sortedUsers.subList(40, 60),
-            dao.findAll(Pageable(2, 20, mapOf("email" to true)))
+            dao.findAll(Pageable(2, 20, mapOf("join_date" to false)))
         )
     }
 

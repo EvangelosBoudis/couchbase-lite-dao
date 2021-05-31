@@ -20,13 +20,13 @@ import com.evangelos.couchbase.lite.core.TYPE
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import kotlin.collections.HashMap
 
 /**
  * Implementation of [DocumentConverter] using the Gson Library.
  */
 class DocumentConverterGson(
     private val gson: Gson,
-    // private val identifierFinder: IdentifierFinder = IdentifierFinderImpl()
 ): ResultSetConverterGson(gson), DocumentConverter {
 
     /**

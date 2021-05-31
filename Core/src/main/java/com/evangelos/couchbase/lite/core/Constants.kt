@@ -18,4 +18,3 @@ package com.evangelos.couchbase.lite.core
 
 const val ID = "id"
 const val TYPE = "@type"
-const val COUCHBASE_LITE_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // couchbase lite stores dates as strings in ISO-8601 format

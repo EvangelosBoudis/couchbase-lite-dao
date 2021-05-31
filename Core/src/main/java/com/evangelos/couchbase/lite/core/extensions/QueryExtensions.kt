@@ -17,7 +17,7 @@
 package com.evangelos.couchbase.lite.core.extensions
 
 import com.couchbase.lite.*
-import com.evangelos.couchbase.lite.core.COUCHBASE_LITE_DATE_FORMAT
+import com.evangelos.couchbase.lite.core.converters.DateConverterGson
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverter
 import com.evangelos.couchbase.lite.core.converters.ResultSetConverterGson
 import com.google.gson.Gson
@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -102,7 +103,7 @@ fun <T> Query.observeData(
  * */
 suspend fun <T> Query.toData(
     converter: Gson = GsonBuilder()
-        .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
+        .registerTypeAdapter(Date::class.java, DateConverterGson())
         .create(),
     clazz: Class<T>
 ): List<T> = toData(ResultSetConverterGson(converter), clazz)
@@ -121,7 +122,7 @@ suspend fun <T> Query.toData(
 fun <T> Query.observeData(
     executor: Executor = Executors.newSingleThreadExecutor(),
     converter: Gson = GsonBuilder()
-        .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
+        .registerTypeAdapter(Date::class.java, DateConverterGson())
         .create(),
     clazz: Class<T>
 ): Flow<List<T>> = observeData(executor, ResultSetConverterGson(converter), clazz)

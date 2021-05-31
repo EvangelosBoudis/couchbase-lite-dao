@@ -18,6 +18,7 @@ package com.evangelos.couchbase.lite.core
 
 import com.evangelos.couchbase.lite.core.converters.DocumentConverter
 import com.evangelos.couchbase.lite.core.converters.DocumentConverterGson
+import com.evangelos.couchbase.lite.core.converters.DateConverterGson
 import com.evangelos.couchbase.lite.core.util.UserData
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.runBlocking
@@ -27,11 +28,13 @@ import java.util.*
 
 class ConverterTest {
 
-    private val converter: DocumentConverter = DocumentConverterGson(
-        GsonBuilder()
-            .setDateFormat(COUCHBASE_LITE_DATE_FORMAT)
-            .create()
-    )
+    private val converter: DocumentConverter by lazy {
+        DocumentConverterGson(
+            GsonBuilder()
+                .registerTypeAdapter(Date::class.java, DateConverterGson())
+                .create()
+        )
+    }
 
     @Test
     fun `data to Mutable Document`() = runBlocking {

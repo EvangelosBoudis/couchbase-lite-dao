@@ -71,16 +71,12 @@ As we mention we use GSON library as converter, so we are free to use any annota
   
 ### Non-blocking generic dao
 
-A `CouchbaseDao` requires a `Database` instance from Couchbase Lite SDK, a `Gson` instance from GSON Library and finally the class that represents the document inside the database.
+A `CouchbaseDao` requires a `Database` instance from Couchbase Lite SDK, an optional `Gson` instance from GSON Library and finally the class that represents the document inside the database.
 
 ```kotlin
 val database = Database("my-database.db", DatabaseConfiguration())
-
-val gson = GsonBuilder()
-            .setDateFormat("dd/MM/yyyy")
-            .create()
   
-val userDao: CouchbaseDao<UserData> = CouchbaseDaoImpl(database, gson, UserData::class.java)
+val userDao: CouchbaseDao<UserData> = CouchbaseDaoImpl(database = database, clazz = UserData::class.java)
 ```
 
 Methods supported by `CouchbaseDao`:
@@ -123,9 +119,8 @@ interface UserDao: CouchbaseDao<UserData> {
 }
 
 class UserDaoImpl(
-    database: Database,
-    gson: Gson
-): CouchbaseDaoImpl<UserData>(database, gson, UserData::class.java), UserDao {
+    database: Database
+): CouchbaseDaoImpl<UserData>(database = database, clazz = UserData::class.java), UserDao {
 
     override suspend fun findByNameMatch(searchKey: String): List<UserDto> {
         return QueryBuilder
@@ -140,7 +135,7 @@ class UserDaoImpl(
 
 }
 
-val userDao: UserDao = UserDaoImpl(database, gson)
+val userDao: UserDao = UserDaoImpl(database)
 ```
 
 ### Flow live queries
@@ -163,8 +158,7 @@ QueryBuilder
 `Query.toData()` and `Query.observeData()` extensions can be used to serialize query results into a desired class.
 <br/>
 More specifically `Query.toData()` extension after query execution and `Query.observeData()` immediately 
-after each change in query results convert the `ResultSet` to the class we specify. 
-If no `Gson` instance is set for serialization, `Gson()` will be used by default.
+after each change in query results convert the `ResultSet` to the class we specify.
 
 ```kotlin
 val query = QueryBuilder

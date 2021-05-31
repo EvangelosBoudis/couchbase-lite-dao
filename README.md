@@ -27,7 +27,7 @@ allprojects {
 And then to your module `build.gradle` file:
 
 ```groovy
-implementation 'com.github.EvangelosBoudis:couchbase-lite-dao:1.0.2'
+implementation 'com.github.EvangelosBoudis:couchbase-lite-dao:1.0.3'
 ```
 
 ## Built With

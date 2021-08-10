@@ -6,11 +6,6 @@ Kotlin Data Access Object for Couchbase Lite JVM and Android SDks.
 [![Language](https://img.shields.io/badge/language-Kotlin-orange.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-<div align="center">
-  <sub>Built with ❤︎ by
-  <a href="https://github.com/EvangelosBoudis">Evangelos Boudis</a>
-</div>
-
 ## Installing
 
 Add JitPack as repository for your project:
